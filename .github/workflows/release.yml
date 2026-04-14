@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Don't run on forks.
+    if: github.repository == 'getpassmint/passmint-node'
+    # Gate publishes through the `production` GitHub environment. This
+    # matches the `environment` claim in the trusted publisher config
+    # on npmjs.com and gives us a place to hang required reviewers or
+    # environment-scoped secrets later without touching this file.
+    environment: production
+    permissions:
+      # Push the "Version Packages" PR and tags.
+      contents: write
+      pull-requests: write
+      # Required for npm trusted publishing via OIDC.
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # Changesets needs full history to detect version bumps.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          # Node 24 ships with npm 11.x, which is required for trusted
+          # publishing via OIDC.
+          node-version: '24'
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # Gate the release on the same checks CI runs. A bad build should
+      # never reach npm.
+      - run: pnpm lint
+      - run: pnpm type-check
+      - run: pnpm test
+      - run: pnpm publint
+      - run: pnpm attw
+      - uses: changesets/action@6a0a831ff30acef54f2c6aa1cbbc1096b066edaf # v1.7.0
+        with:
+          # When there are pending changesets, opens/updates the
+          # "Version Packages" PR. When that PR is merged and the
+          # changesets are gone, `publish` runs and ships to npm.
+          #
+          # `pnpm format` after the version bump reformats the files
+          # changesets just wrote through Biome, so the committed PR is
+          # already lint-clean.
+          version: pnpm changeset version && pnpm format
+          publish: pnpm changeset publish
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
+        env:
+          # Trusted publishing handles npm auth + provenance automatically
+          # via the OIDC token minted by `permissions: id-token: write`.
+          # No NPM_TOKEN needed.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

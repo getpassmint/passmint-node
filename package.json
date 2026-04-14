@@ -1,0 +1,63 @@
+{
+  "name": "@passmint/node",
+  "version": "0.1.0",
+  "description": "Official Node.js SDK for the Passmint API.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "LICENSE", "README.md"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "attw": "attw --pack . --profile esm-only",
+    "publint": "publint",
+    "clean": "rm -rf dist .turbo",
+    "changeset": "changeset",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.17.2",
+    "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.27.11",
+    "@types/node": "^22.10.5",
+    "publint": "^0.3.2",
+    "tsdown": "^0.10.1",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "passmint",
+    "apple-wallet",
+    "google-wallet",
+    "pkpass",
+    "wallet",
+    "pass",
+    "sdk",
+    "node"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getpassmint/passmint-node.git"
+  },
+  "homepage": "https://github.com/getpassmint/passmint-node#readme",
+  "bugs": {
+    "url": "https://github.com/getpassmint/passmint-node/issues"
+  }
+}
