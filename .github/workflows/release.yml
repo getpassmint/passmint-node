@@ -52,10 +52,13 @@ jobs:
           # "Version Packages" PR. When that PR is merged and the
           # changesets are gone, `publish` runs and ships to npm.
           #
-          # `pnpm format` after the version bump reformats the files
+          # The changesets action spawns this command WITHOUT a shell, so
+          # `&&` chains don't work here — the chain lives in the
+          # `version-packages` package.json script instead (scripts run
+          # through a shell). It bumps versions, then reformats the files
           # changesets just wrote through Biome, so the committed PR is
           # already lint-clean.
-          version: pnpm changeset version && pnpm format
+          version: pnpm version-packages
           publish: pnpm changeset publish
           commit: 'chore: version packages'
           title: 'chore: version packages'
