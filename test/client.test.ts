@@ -54,6 +54,33 @@ describe('PassmintHttpClient constructor', () => {
   })
 })
 
+describe('default fetch binding', () => {
+  const originalFetch = globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  it('invokes the default global fetch without a foreign receiver (workerd compatibility)', async () => {
+    // Cloudflare's workerd throws "Illegal invocation" when fetch is called
+    // with anything other than its own global as `this`. Node's undici does
+    // not care, so reproduce workerd's strictness in the stub — if the
+    // client ever stores the default fetch unbound again, this test fails.
+    globalThis.fetch = async function (this: unknown, ...args: Parameters<typeof fetch>) {
+      void args
+      if (this !== undefined && this !== globalThis) {
+        throw new TypeError('Illegal invocation')
+      }
+      return new Response(JSON.stringify({ ok: true }), { status: 200 })
+    } as typeof fetch
+
+    const client = new PassmintHttpClient({ apiKey: 'pmk_test_1', maxRetries: 0 })
+    await expect(client.request({ method: 'GET', path: '/v1/me' })).resolves.toEqual({
+      ok: true,
+    })
+  })
+})
+
 describe('VERSION', () => {
   it('matches package.json (regenerate with: node scripts/sync-version.mjs)', () => {
     const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))

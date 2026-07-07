@@ -82,7 +82,12 @@ export class PassmintHttpClient {
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
-    this.fetchImpl = options.fetch ?? globalThis.fetch
+    // Bind the default fetch to its own global: we invoke it as
+    // `this.fetchImpl(...)`, and receiver-sensitive runtimes (Cloudflare's
+    // workerd) throw "TypeError: Illegal invocation" when fetch is called
+    // with any other `this`. Node's undici doesn't care, so only Workers
+    // users ever saw it.
+    this.fetchImpl = options.fetch ?? globalThis.fetch?.bind(globalThis)
     if (!this.fetchImpl) {
       throw new PassmintError(
         'global fetch is not available; pass a fetch implementation in options.fetch',
