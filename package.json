@@ -1,6 +1,6 @@
 {
   "name": "@passmint/node",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Official Node.js SDK for the Passmint API.",
   "type": "module",
   "packageManager": "pnpm@9.15.0",
