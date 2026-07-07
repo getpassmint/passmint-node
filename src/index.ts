@@ -79,3 +79,4 @@ export class Passmint {
 }
 
 export { detectMode }
+export { VERSION } from './version'

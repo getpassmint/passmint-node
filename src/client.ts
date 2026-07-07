@@ -5,6 +5,7 @@ import {
   PassmintError,
   PassmintRateLimitError,
 } from './errors'
+import { VERSION } from './version'
 
 export interface PassmintOptions {
   apiKey: string
@@ -99,7 +100,7 @@ export class PassmintHttpClient {
     const url = buildUrl(this.baseUrl, req.path, req.query)
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
-      'User-Agent': 'passmint-node/0.1.0',
+      'User-Agent': `passmint-node/${VERSION}`,
     }
     if (req.body !== undefined) headers['Content-Type'] = 'application/json'
     if (req.idempotencyKey) headers['Idempotency-Key'] = req.idempotencyKey

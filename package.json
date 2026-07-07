@@ -28,7 +28,7 @@
     "publint": "publint",
     "clean": "rm -rf dist .turbo",
     "changeset": "changeset",
-    "version-packages": "changeset version && pnpm format",
+    "version-packages": "changeset version && node scripts/sync-version.mjs && pnpm format",
     "release": "changeset publish"
   },
   "devDependencies": {

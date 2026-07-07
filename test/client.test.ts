@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PassmintHttpClient, detectMode } from '../src/client'
 import {
@@ -6,6 +7,7 @@ import {
   PassmintError,
   PassmintRateLimitError,
 } from '../src/errors'
+import { VERSION } from '../src/version'
 
 type FetchCall = { url: string; init: RequestInit }
 
@@ -52,6 +54,13 @@ describe('PassmintHttpClient constructor', () => {
   })
 })
 
+describe('VERSION', () => {
+  it('matches package.json (regenerate with: node scripts/sync-version.mjs)', () => {
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+    expect(VERSION).toBe(pkg.version)
+  })
+})
+
 describe('PassmintHttpClient.request', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -79,6 +88,16 @@ describe('PassmintHttpClient.request', () => {
     expect(calls[0]?.url).toBe('https://api.example.test/v1/passes/pass_1')
     const headers = calls[0]?.init.headers as Record<string, string>
     expect(headers.Authorization).toBe('Bearer pmk_test_1')
+  })
+
+  it('sends a User-Agent derived from the package version', async () => {
+    const { impl, calls } = makeFetch([{ status: 200, body: {} }])
+    const client = new PassmintHttpClient({ apiKey: 'pmk_test_1', fetch: impl })
+    const p = client.request({ method: 'GET', path: '/v1/me' })
+    await flush()
+    await p
+    const headers = calls[0]?.init.headers as Record<string, string>
+    expect(headers['User-Agent']).toBe(`passmint-node/${VERSION}`)
   })
 
   it('appends query params, skipping undefined/empty values', async () => {
