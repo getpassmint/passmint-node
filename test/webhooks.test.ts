@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest'
 import { PassmintError } from '../src/errors'
+import { PASSMINT_EVENT_TYPES, type PassmintEvent, type PassmintEventType } from '../src/types'
 import { WebhooksResource } from '../src/webhooks'
 
 const SECRET = 'whsec_test'
@@ -12,7 +13,8 @@ function sign(body: string, timestamp: number, secret = SECRET): string {
 }
 
 describe('WebhooksResource.constructEvent', () => {
-  const webhooks = new WebhooksResource()
+  // constructEvent is pure — it never touches the HTTP client.
+  const webhooks = new WebhooksResource(undefined as never)
 
   beforeEach(() => {
     vi.useFakeTimers()
@@ -78,5 +80,58 @@ describe('WebhooksResource.constructEvent', () => {
     const ts = Math.floor(FIXED_NOW / 1000)
     const header = sign(body, ts)
     expect(() => webhooks.constructEvent(body, header, SECRET)).toThrow(/not valid JSON/i)
+  })
+
+  it('parses a canonical event envelope and types it as PassmintEvent', () => {
+    const envelope = {
+      id: 'psEvnt_abc123',
+      object: 'event',
+      type: 'pass.added_to_wallet',
+      api_version: '2026-06-26',
+      created_at: '2026-07-01T12:00:00.000Z',
+      idempotency_key: 'psEvnt_abc123',
+      livemode: false,
+      data: {
+        object: {
+          pass: {
+            id: 'pass_1',
+            short_id: 'shrt1',
+            template_id: 'tmpl_1',
+            organization_id: 'org_1',
+            serial_number: 'SN1',
+            holder: { email_hash: null, name_present: false },
+            voided: false,
+            url: 'https://passmint.com/p/shrt1',
+            download_url: null,
+            google_wallet_url: null,
+          },
+        },
+      },
+      source: { platform: 'apple', unit: 'device', confidence: 'exact' },
+      previous_attributes: null,
+    }
+    const body = JSON.stringify(envelope)
+    const ts = Math.floor(FIXED_NOW / 1000)
+    const event = webhooks.constructEvent(body, sign(body, ts), SECRET)
+
+    expectTypeOf(event).toEqualTypeOf<PassmintEvent>()
+    expect(event).toEqual(envelope)
+    expect(PASSMINT_EVENT_TYPES).toContain(event.type)
+    expect(event.data.object.pass.holder).toEqual({ email_hash: null, name_present: false })
+  })
+})
+
+describe('PASSMINT_EVENT_TYPES', () => {
+  it('matches the canonical Passmint Spec v1 lifecycle set', () => {
+    expect(PASSMINT_EVENT_TYPES).toEqual([
+      'pass.issued',
+      'pass.add_intent',
+      'pass.added_to_wallet',
+      'pass.update_pushed',
+      'pass.update_delivered',
+      'pass.removed',
+      'pass.voided',
+    ])
+    expectTypeOf<PassmintEventType>().toEqualTypeOf<(typeof PASSMINT_EVENT_TYPES)[number]>()
   })
 })

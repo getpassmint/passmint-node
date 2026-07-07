@@ -90,9 +90,11 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 | `list(params?)` | List passes, filter by template or holder email. |
 | `update(id, params, options?)` | Update field values or metadata on a pass. |
 | `void(id)` | Void a pass. |
-| `events(id)` | List lifecycle events for a pass. |
+| `events(id)` | List raw lifecycle events for a pass (internal vocabulary, e.g. `installed`). Use `passmint.events` for the canonical `pass.*` stream. |
 
 `create` and `update` accept an optional `idempotencyKey` in `options`. If omitted, the SDK generates one for you so retries are safe by default.
+
+`create` also accepts `platforms` (`['apple', 'google']`) and `certificateSetId` overrides. The created pass includes `warnings` for platforms that could not be delivered.
 
 ### Templates — `passmint.templates`
 
@@ -101,10 +103,61 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 | `create(params, options?)` | Create a template. |
 | `retrieve(id)` | Fetch a template by id. |
 | `list()` | List all templates. |
-| `update(id, params)` | Update a template's name, design, or archive state. |
+| `update(id, params)` | Update name, design, platforms, credentials, or archive state. |
 | `archive(id)` | Archive a template. |
 
+### Events — `passmint.events`
+
+The canonical event stream (the same envelopes your webhooks receive):
+
+```ts
+const { data, has_more } = await passmint.events.list({
+  type: 'pass.added_to_wallet',
+  since: '2026-07-01T00:00:00Z',
+  limit: 100,
+})
+
+// Cursor pagination
+const next = await passmint.events.list({ startingAfter: data.at(-1)!.id })
+```
+
+Canonical event types: `pass.issued`, `pass.add_intent`, `pass.added_to_wallet`, `pass.update_pushed`, `pass.update_delivered`, `pass.removed`, `pass.voided` (exported as `PASSMINT_EVENT_TYPES`).
+
+### Metrics — `passmint.metrics`
+
+```ts
+const funnel = await passmint.metrics.funnel({ groupBy: 'template', since: '2026-06-01' })
+// funnel.data: issued / add_intent / added / active / removed + rates, per group
+```
+
+### Account — `passmint.me`
+
+```ts
+const account = await passmint.me.retrieve()
+// { organization_id, organization_name, organization_slug, mode }
+```
+
 ### Webhooks — `passmint.webhooks`
+
+Manage webhook endpoints:
+
+| Method | Description |
+| --- | --- |
+| `create(params)` | Create an endpoint. Returns the signing `secret` **once** — store it. |
+| `retrieve(id)` / `list()` | Fetch endpoints. |
+| `update(id, params)` | Change url, subscribed events, description, or enabled state. |
+| `delete(id)` | Delete an endpoint. |
+| `backfill(id, { since, until? })` | Re-emit historical events to one endpoint. |
+| `deliveries(id)` | Last 100 delivery attempts, newest first. |
+| `replayDelivery(id, deliveryId)` | Re-queue a delivery (including dead ones). |
+
+```ts
+const webhook = await passmint.webhooks.create({
+  url: 'https://example.com/hooks/passmint',
+  events: ['pass.added_to_wallet', 'pass.removed'], // or ['*']
+})
+// webhook.secret -> whsec_... (only returned here)
+```
 
 Verify and parse webhook deliveries in one step:
 
@@ -120,7 +173,12 @@ app.post('/webhooks/passmint', (req, res) => {
       req.headers['passmint-signature'] as string,
       process.env.PASSMINT_WEBHOOK_SECRET!,
     )
-    // handle event.type ...
+    // event is a typed PassmintEvent
+    if (event.type === 'pass.added_to_wallet') {
+      const { pass } = event.data.object
+      // pass.holder is PII-minimized ({ email_hash, name_present });
+      // fetch the full pass with passmint.passes.retrieve(pass.id) if needed
+    }
     res.sendStatus(200)
   } catch (err) {
     if (err instanceof PassmintError) return res.sendStatus(400)
@@ -159,6 +217,12 @@ try {
 ```
 
 The SDK automatically retries `429` and `5xx` responses with exponential backoff, up to `maxRetries` times.
+
+## Testing
+
+- `pnpm test` — unit tests + type-level assertions (vitest with `--typecheck`).
+- `pnpm test:ecosystem` — packs the SDK into a tarball and installs it into consumer fixture projects (plain Node ESM, TypeScript under `node16` and `bundler` resolution, Bun, Deno), then runs the README quickstart flow against a mock Passmint API. This is what proves a user can actually `npm install` and use the package as documented. See [`ecosystem-tests/README.md`](./ecosystem-tests/README.md).
+- `pnpm publint` / `pnpm attw` — static packaging and type-resolution checks.
 
 ## Releasing
 

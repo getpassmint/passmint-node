@@ -1,0 +1,8 @@
+{
+  "name": "ecosystem-node-js",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@passmint/node": "file:../.packed/passmint-node.tgz"
+  }
+}

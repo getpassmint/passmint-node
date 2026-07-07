@@ -18,7 +18,7 @@ function makeFetch(
     const next = responses.shift()
     if (!next) throw new Error('unexpected extra fetch call')
     const body = next.body === undefined ? '' : JSON.stringify(next.body)
-    return new Response(body, { status: next.status, headers: next.headers })
+    return new Response(body, { status: next.status, headers: next.headers ?? {} })
   }) as unknown as typeof fetch
   return { impl, calls }
 }

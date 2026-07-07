@@ -12,17 +12,25 @@ import type {
 export class PassesResource {
   constructor(private readonly http: PassmintHttpClient) {}
 
-  create(params: CreatePassParams, options: RequestOptions = {}): Promise<Pass> {
-    return this.http.request<Pass>({
+  create(
+    params: CreatePassParams,
+    options: RequestOptions = {},
+  ): Promise<Pass & { warnings: string[] }> {
+    const body: Record<string, unknown> = {
+      template_id: params.templateId,
+      holder_email: params.holderEmail ?? null,
+      holder_name: params.holderName ?? null,
+      field_values: params.fieldValues ?? {},
+      metadata: params.metadata ?? null,
+    }
+    // undefined means "inherit the template default"; null is a meaningful
+    // override (dev cert), so only omit the key when truly unset.
+    if (params.certificateSetId !== undefined) body.certificate_set_id = params.certificateSetId
+    if (params.platforms !== undefined) body.platforms = params.platforms
+    return this.http.request<Pass & { warnings: string[] }>({
       method: 'POST',
       path: '/v1/passes',
-      body: {
-        template_id: params.templateId,
-        holder_email: params.holderEmail ?? null,
-        holder_name: params.holderName ?? null,
-        field_values: params.fieldValues ?? {},
-        metadata: params.metadata ?? null,
-      },
+      body,
       idempotencyKey: options.idempotencyKey ?? generateIdempotencyKey(),
     })
   }

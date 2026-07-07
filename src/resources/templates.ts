@@ -1,20 +1,28 @@
 import { type PassmintHttpClient, generateIdempotencyKey } from '../client'
-import type { CreateTemplateParams, ListResponse, RequestOptions, Template } from '../types'
+import type {
+  CreateTemplateParams,
+  ListResponse,
+  RequestOptions,
+  Template,
+  UpdateTemplateParams,
+} from '../types'
 
 export class TemplatesResource {
   constructor(private readonly http: PassmintHttpClient) {}
 
   create(params: CreateTemplateParams, options: RequestOptions = {}): Promise<Template> {
+    const body: Record<string, unknown> = {
+      name: params.name,
+      type: params.type,
+      apple_style: params.appleStyle,
+      design: params.design,
+      starter_template_id: params.starterTemplateId,
+    }
+    if (params.platforms !== undefined) body.platforms = params.platforms
     return this.http.request<Template>({
       method: 'POST',
       path: '/v1/templates',
-      body: {
-        name: params.name,
-        type: params.type,
-        apple_style: params.appleStyle,
-        design: params.design,
-        starter_template_id: params.starterTemplateId,
-      },
+      body,
       idempotencyKey: options.idempotencyKey ?? generateIdempotencyKey(),
     })
   }
@@ -33,14 +41,20 @@ export class TemplatesResource {
     })
   }
 
-  update(
-    id: string,
-    params: { name?: string; design?: unknown; archived?: boolean },
-  ): Promise<Template> {
+  update(id: string, params: UpdateTemplateParams): Promise<Template> {
+    const body: Record<string, unknown> = {}
+    if (params.name !== undefined) body.name = params.name
+    if (params.design !== undefined) body.design = params.design
+    if (params.archived !== undefined) body.archived = params.archived
+    if (params.platforms !== undefined) body.platforms = params.platforms
+    // null is meaningful for both overrides (clear back to the default), so
+    // only omit the keys when truly unset.
+    if (params.certificateSetId !== undefined) body.certificate_set_id = params.certificateSetId
+    if (params.googleIssuerId !== undefined) body.google_issuer_id = params.googleIssuerId
     return this.http.request<Template>({
       method: 'PATCH',
       path: `/v1/templates/${encodeURIComponent(id)}`,
-      body: params,
+      body,
     })
   }
 
