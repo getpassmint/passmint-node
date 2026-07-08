@@ -1,5 +1,15 @@
 # @passmint/node
 
+## 0.3.0
+
+### Minor Changes
+
+- f41b671: Add the optional `headerFields` slot to `TemplateDesign`, so templates created or updated through the SDK can place small fields in the pass header (top-right, next to the logo).
+
+### Patch Changes
+
+- 93c099e: Document the wallet URLs carried on a pass (`url`, `download_url`, `google_wallet_url`) and the "build your own Apple/Google Wallet buttons" fallback pattern in the README, and clarify the JSDoc on those fields so they're self-explanatory in-editor.
+
 ## 0.2.2
 
 ### Patch Changes
