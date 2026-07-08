@@ -35,6 +35,11 @@ export interface TemplateDesign {
   iconImageKey: string | null
   stripImageKey: string | null
   thumbnailImageKey: string | null
+  /**
+   * Small fields shown top-right of the pass, next to the logo (Apple slot,
+   * max 3). Optional — omit for templates that don't use them.
+   */
+  headerFields?: TemplateField[]
   primaryFields: TemplateField[]
   secondaryFields: TemplateField[]
   auxiliaryFields: TemplateField[]
