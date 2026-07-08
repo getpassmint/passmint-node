@@ -65,6 +65,48 @@ const { data } = await passmint.passes.list({ templateId: 'tmpl_123', limit: 20 
 await passmint.passes.void(pass.id)
 ```
 
+## Adding passes to a wallet
+
+Every created or retrieved pass carries three URLs. Use them to send users
+straight into Apple Wallet / Google Wallet from your own UI, or hand off to the
+Passmint-hosted page:
+
+| Field | Points at | Notes |
+| --- | --- | --- |
+| `url` | The Passmint-hosted pass page (`passmint.com/p/…`) | Always present. Detects the visitor's platform and shows the right "Add to Wallet" button(s) — plus a QR code on desktop. Use as your universal fallback. |
+| `download_url` | The Apple `.pkpass` file, downloaded directly | Present once Apple issuance succeeded; `null` if Apple wasn't delivered (e.g. a Google-only template, or Apple failed). |
+| `google_wallet_url` | The Google Wallet "Save" link (`pay.google.com/…`) | Present once Google issuance succeeded; `null` if Google wasn't delivered (e.g. no Google issuer configured). |
+
+Issuance is synchronous, so these are populated the moment `create()` resolves —
+a URL is `null` only when that platform wasn't delivered for this pass.
+
+### Build your own wallet buttons
+
+Render your own branded "Add to Apple Wallet" / "Add to Google Wallet" buttons
+and fall back to the hosted page when a direct link isn't available:
+
+```ts
+const pass = await passmint.passes.create({
+  templateId: 'tmpl_123',
+  fieldValues: { seat: '12A' },
+})
+
+// Prefer the direct link; fall back to the hosted page, which platform-detects.
+const appleHref = pass.download_url ?? pass.url
+const googleHref = pass.google_wallet_url ?? pass.url
+```
+
+- **Apple** (`download_url`) — link an anchor to it, or trigger it in a hidden
+  iframe so Safari opens the Add-to-Wallet sheet without navigating away.
+- **Google** (`google_wallet_url`) — link to it directly; it redirects into the
+  Google Wallet save flow.
+- **Fallback** (`url`) — the hosted page inspects the visitor's platform and
+  shows the appropriate button(s). Always safe to link to when you just want
+  "add to wallet" to work everywhere.
+
+The direct URLs are guarded by an unguessable pass id (the same mechanism the
+hosted page uses); voiding a pass disables all three.
+
 ## Configuration
 
 ```ts
