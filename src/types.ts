@@ -76,10 +76,19 @@ export interface Pass {
   created_via_api: boolean
   platforms: WalletPlatform[]
   platform_status: PassPlatformStatus | null
+  /** Passmint-hosted pass page; platform-detects and is always present. Use as your fallback. */
   url: string
-  /** Only present once Apple has delivered the pass. */
+  /**
+   * Direct download of the Apple `.pkpass`. Populated when Apple issuance
+   * succeeded; `null` when Apple wasn't delivered for this pass. Fall back to
+   * `url`.
+   */
   download_url: string | null
-  /** Only present once Google has delivered the pass. */
+  /**
+   * Google Wallet "Save" link. Populated when Google issuance succeeded; `null`
+   * when Google wasn't delivered (e.g. no Google issuer configured). Fall back
+   * to `url`.
+   */
   google_wallet_url: string | null
   created_at: string
 }
@@ -152,10 +161,11 @@ export interface EventPass {
   serial_number: string
   holder: MinimizedHolder
   voided: boolean
+  /** Passmint-hosted pass page; platform-detects and is always present. */
   url: string
-  /** Only present once Apple has delivered the pass. */
+  /** Direct Apple `.pkpass` download; `null` when Apple wasn't delivered. Falls back to `url`. */
   download_url: string | null
-  /** Only present once Google has delivered the pass. */
+  /** Google Wallet "Save" link; `null` when Google wasn't delivered. Falls back to `url`. */
   google_wallet_url: string | null
 }
 
