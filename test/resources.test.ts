@@ -93,6 +93,15 @@ describe('PassesResource', () => {
     expect(calls[0]?.body).toMatchObject({ certificate_set_id: null })
   })
 
+  it('create: maps imageVariant to image_variant, omitting it when unset', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    await passes.create({ templateId: 'tmpl_1', imageVariant: '3' })
+    await passes.create({ templateId: 'tmpl_1' })
+    expect(calls[0]?.body).toMatchObject({ image_variant: '3' })
+    expect(calls[1]?.body).not.toHaveProperty('image_variant')
+  })
+
   it('retrieve: GETs and URL-encodes the id', async () => {
     const { http, calls } = fakeHttp()
     const passes = new PassesResource(http)
@@ -122,6 +131,28 @@ describe('PassesResource', () => {
     expect(calls[0]?.path).toBe('/v1/passes/pass_1')
     expect(calls[0]?.body).toEqual({ field_values: { seat: '1B' }, metadata: null })
     expect(calls[0]?.idempotencyKey).toBeDefined()
+  })
+
+  it('update: sends image_variant alone (a variant-only PATCH is valid)', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    await passes.update('pass_1', { imageVariant: '7' })
+    expect(calls[0]?.body).toStrictEqual({ image_variant: '7' })
+  })
+
+  it('update: sends an explicit null image_variant to clear it', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    await passes.update('pass_1', { fieldValues: { stamps: '0' }, imageVariant: null })
+    expect(calls[0]?.body).toStrictEqual({ field_values: { stamps: '0' }, image_variant: null })
+    expect(JSON.stringify(calls[0]?.body)).toContain('"image_variant":null')
+  })
+
+  it('update: omits image_variant (and other unset keys) when undefined', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    await passes.update('pass_1', { fieldValues: { stamps: '2' } })
+    expect(calls[0]?.body).toStrictEqual({ field_values: { stamps: '2' } })
   })
 
   it('void: DELETEs /v1/passes/:id', async () => {
@@ -211,6 +242,159 @@ describe('TemplatesResource', () => {
       body: { name: 'Renamed', archived: true },
     })
     expect(calls[3]).toMatchObject({ method: 'DELETE', path: '/v1/templates/tmpl_1' })
+  })
+})
+
+describe('TemplatesResource images', () => {
+  // 0x89 'P' 'N' 'G' \r \n 0x1a \n — the PNG signature, base64 "iVBORw0KGgo="
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const pngBase64 = 'iVBORw0KGgo='
+
+  it('uploadImage: PUTs base64 data to /v1/templates/:id/images/:slot', async () => {
+    const { http, calls } = fakeHttp({
+      object: 'template_image',
+      template_id: 'tmpl_1',
+      slot: 'logo',
+      variant: null,
+    })
+    const templates = new TemplatesResource(http)
+    const image = await templates.uploadImage('tmpl_1', 'logo', png)
+    expect(calls[0]).toMatchObject({ method: 'PUT', path: '/v1/templates/tmpl_1/images/logo' })
+    expect(calls[0]?.body).toStrictEqual({ data: pngBase64 })
+    expect(calls[0]?.query).toBeUndefined()
+    expect(image.variant).toBeNull()
+  })
+
+  it('uploadImage: includes the variant when provided', async () => {
+    const { http, calls } = fakeHttp()
+    const templates = new TemplatesResource(http)
+    await templates.uploadImage('tmpl/1', 'strip', png, { variant: '10' })
+    expect(calls[0]?.path).toBe('/v1/templates/tmpl%2F1/images/strip')
+    expect(calls[0]?.body).toStrictEqual({ data: pngBase64, variant: '10' })
+  })
+
+  it('uploadImage: accepts an ArrayBuffer', async () => {
+    const { http, calls } = fakeHttp()
+    const templates = new TemplatesResource(http)
+    await templates.uploadImage('tmpl_1', 'icon', png.slice().buffer)
+    expect(calls[0]?.body).toStrictEqual({ data: pngBase64 })
+  })
+
+  it('uploadImage: encodes only the viewed bytes of a Buffer / offset Uint8Array', async () => {
+    const { http, calls } = fakeHttp()
+    const templates = new TemplatesResource(http)
+    const backing = new Uint8Array([0xff, 0xff, ...png, 0xff])
+    await templates.uploadImage('tmpl_1', 'thumbnail', backing.subarray(2, 2 + png.length))
+    await templates.uploadImage('tmpl_1', 'thumbnail', Buffer.from(png))
+    expect(calls[0]?.body).toStrictEqual({ data: pngBase64 })
+    expect(calls[1]?.body).toStrictEqual({ data: pngBase64 })
+  })
+
+  it('uploadImage: encodes large images without Buffer (matches Node base64)', async () => {
+    const { http, calls } = fakeHttp()
+    const templates = new TemplatesResource(http)
+    const big = new Uint8Array(200_000).map((_, i) => (i * 31) % 256)
+    const RealBuffer = globalThis.Buffer
+    vi.stubGlobal('Buffer', undefined)
+    try {
+      await templates.uploadImage('tmpl_1', 'background', big)
+    } finally {
+      vi.stubGlobal('Buffer', RealBuffer)
+    }
+    expect((calls[0]?.body as { data: string }).data).toBe(RealBuffer.from(big).toString('base64'))
+  })
+
+  it('deleteImage: DELETEs with the variant as a query param', async () => {
+    const { http, calls } = fakeHttp({
+      object: 'template_image',
+      template_id: 'tmpl_1',
+      slot: 'strip',
+      variant: '3',
+      deleted: true,
+    })
+    const templates = new TemplatesResource(http)
+    const res = await templates.deleteImage('tmpl_1', 'strip', { variant: '3' })
+    expect(calls[0]).toMatchObject({
+      method: 'DELETE',
+      path: '/v1/templates/tmpl_1/images/strip',
+      query: { variant: '3' },
+    })
+    expect(calls[0]?.body).toBeUndefined()
+    expect(res.deleted).toBe(true)
+  })
+
+  it('deleteImage: leaves variant unset for the base image', async () => {
+    const { http, calls } = fakeHttp()
+    const templates = new TemplatesResource(http)
+    await templates.deleteImage('tmpl_1', 'footer')
+    expect(calls[0]).toMatchObject({ method: 'DELETE', path: '/v1/templates/tmpl_1/images/footer' })
+    expect(calls[0]?.query?.variant).toBeUndefined()
+  })
+})
+
+describe('PassesResource images', () => {
+  // 0x89 'P' 'N' 'G' \r \n 0x1a \n — the PNG signature, base64 "iVBORw0KGgo="
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const pngBase64 = 'iVBORw0KGgo='
+  const updatedPass = {
+    id: 'pass_1',
+    object: 'pass',
+    image_variant: null,
+    images: { icon: { source: 'template' }, thumbnail: { source: 'pass' } },
+  }
+
+  it('uploadImage: PUTs base64 data to /v1/passes/:id/images/:slot, no idempotency key', async () => {
+    const { http, calls } = fakeHttp(updatedPass)
+    const passes = new PassesResource(http)
+    const pass = await passes.uploadImage('pass_1', 'thumbnail', png)
+    expect(calls[0]).toMatchObject({ method: 'PUT', path: '/v1/passes/pass_1/images/thumbnail' })
+    expect(calls[0]?.body).toStrictEqual({ data: pngBase64 })
+    expect(calls[0]?.query).toBeUndefined()
+    expect(calls[0]?.idempotencyKey).toBeUndefined()
+    expect(pass.images.thumbnail?.source).toBe('pass')
+  })
+
+  it('uploadImage: URL-encodes the pass id and accepts an ArrayBuffer', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    await passes.uploadImage('pass/1', 'strip', png.slice().buffer)
+    expect(calls[0]?.path).toBe('/v1/passes/pass%2F1/images/strip')
+    expect(calls[0]?.body).toStrictEqual({ data: pngBase64 })
+  })
+
+  it('uploadImage: encodes only the viewed bytes of a Buffer / offset Uint8Array', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    const backing = new Uint8Array([0xff, 0xff, ...png, 0xff])
+    await passes.uploadImage('pass_1', 'background', backing.subarray(2, 2 + png.length))
+    await passes.uploadImage('pass_1', 'background', Buffer.from(png))
+    expect(calls[0]?.body).toStrictEqual({ data: pngBase64 })
+    expect(calls[1]?.body).toStrictEqual({ data: pngBase64 })
+  })
+
+  it('uploadImage: encodes large images without Buffer (matches Node base64)', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    const big = new Uint8Array(200_000).map((_, i) => (i * 31) % 256)
+    const RealBuffer = globalThis.Buffer
+    vi.stubGlobal('Buffer', undefined)
+    try {
+      await passes.uploadImage('pass_1', 'thumbnail', big)
+    } finally {
+      vi.stubGlobal('Buffer', RealBuffer)
+    }
+    expect((calls[0]?.body as { data: string }).data).toBe(RealBuffer.from(big).toString('base64'))
+  })
+
+  it('deleteImage: DELETEs /v1/passes/:id/images/:slot and returns the pass', async () => {
+    const { http, calls } = fakeHttp({ ...updatedPass, images: { icon: { source: 'template' } } })
+    const passes = new PassesResource(http)
+    const pass = await passes.deleteImage('pass_1', 'thumbnail')
+    expect(calls[0]).toMatchObject({ method: 'DELETE', path: '/v1/passes/pass_1/images/thumbnail' })
+    expect(calls[0]?.body).toBeUndefined()
+    expect(calls[0]?.query).toBeUndefined()
+    expect(calls[0]?.idempotencyKey).toBeUndefined()
+    expect(pass.images.thumbnail).toBeUndefined()
   })
 })
 

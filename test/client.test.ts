@@ -181,6 +181,27 @@ describe('PassmintHttpClient.request', () => {
     expect(impl).toHaveBeenCalledTimes(1)
   })
 
+  it('maps a 409 (e.g. image update on a voided pass) to PassmintAPIError without retrying', async () => {
+    const { impl, calls } = makeFetch([
+      {
+        status: 409,
+        body: { error: { type: 'invalid_request_error', code: 'pass_voided', message: 'voided' } },
+      },
+    ])
+    const client = new PassmintHttpClient({ apiKey: 'pmk_test_1', fetch: impl, maxRetries: 3 })
+    const p = client
+      .request({ method: 'PUT', path: '/v1/passes/pass_1/images/thumbnail', body: { data: 'x' } })
+      .catch((e) => e)
+    await flush()
+    const err = await p
+    expect(err).toBeInstanceOf(PassmintAPIError)
+    expect((err as PassmintAPIError).status).toBe(409)
+    expect((err as PassmintAPIError).code).toBe('pass_voided')
+    expect(impl).toHaveBeenCalledTimes(1)
+    const headers = calls[0]?.init.headers as Record<string, string>
+    expect(headers['Idempotency-Key']).toBeUndefined()
+  })
+
   it('maps 429 to PassmintRateLimitError with retry-after header', async () => {
     const { impl } = makeFetch([
       {

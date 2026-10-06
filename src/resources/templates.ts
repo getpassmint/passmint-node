@@ -1,10 +1,15 @@
 import { type PassmintHttpClient, generateIdempotencyKey } from '../client'
+import { toBase64 } from '../encoding'
 import type {
   CreateTemplateParams,
   ListResponse,
   RequestOptions,
   Template,
+  TemplateImage,
+  TemplateImageOptions,
+  TemplateImageSlot,
   UpdateTemplateParams,
+  VariantImageSlot,
 } from '../types'
 
 export class TemplatesResource {
@@ -62,6 +67,59 @@ export class TemplatesResource {
     return this.http.request({
       method: 'DELETE',
       path: `/v1/templates/${encodeURIComponent(id)}`,
+    })
+  }
+
+  /**
+   * Upload a PNG or JPEG to a template image slot. With `options.variant`,
+   * stores a named variant (strip / thumbnail / background only) that passes
+   * can opt into via `imageVariant`. Re-uploading replaces the existing image.
+   */
+  uploadImage(
+    templateId: string,
+    slot: VariantImageSlot,
+    data: Uint8Array | ArrayBuffer,
+    options?: TemplateImageOptions,
+  ): Promise<TemplateImage>
+  uploadImage(
+    templateId: string,
+    slot: TemplateImageSlot,
+    data: Uint8Array | ArrayBuffer,
+  ): Promise<TemplateImage>
+  uploadImage(
+    templateId: string,
+    slot: TemplateImageSlot,
+    data: Uint8Array | ArrayBuffer,
+    options: TemplateImageOptions = {},
+  ): Promise<TemplateImage> {
+    const body: Record<string, unknown> = { data: toBase64(data) }
+    if (options.variant !== undefined) body.variant = options.variant
+    return this.http.request<TemplateImage>({
+      method: 'PUT',
+      path: `/v1/templates/${encodeURIComponent(templateId)}/images/${encodeURIComponent(slot)}`,
+      body,
+    })
+  }
+
+  /** Remove a template image, or one named variant of it with `options.variant`. */
+  deleteImage(
+    templateId: string,
+    slot: VariantImageSlot,
+    options?: TemplateImageOptions,
+  ): Promise<TemplateImage & { deleted: true }>
+  deleteImage(
+    templateId: string,
+    slot: TemplateImageSlot,
+  ): Promise<TemplateImage & { deleted: true }>
+  deleteImage(
+    templateId: string,
+    slot: TemplateImageSlot,
+    options: TemplateImageOptions = {},
+  ): Promise<TemplateImage & { deleted: true }> {
+    return this.http.request<TemplateImage & { deleted: true }>({
+      method: 'DELETE',
+      path: `/v1/templates/${encodeURIComponent(templateId)}/images/${encodeURIComponent(slot)}`,
+      query: { variant: options.variant },
     })
   }
 }

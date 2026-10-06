@@ -23,6 +23,13 @@ export interface TemplateField {
   defaultValue: string | null
   textAlignment: 'left' | 'center' | 'right' | 'natural'
   required: boolean
+  /**
+   * Apple Wallet change message: a format string shown as a lock-screen
+   * notification when this field's value changes on a pass update. Must
+   * contain `%@`, which is replaced with the new value (e.g.
+   * `"You now have %@ stamps"`). Without it, Apple updates the pass silently.
+   */
+  changeMessage?: string
 }
 
 export interface TemplateDesign {
@@ -60,9 +67,49 @@ export interface Template {
   platforms: WalletPlatform[]
   certificate_set_id: string | null
   google_issuer_id: string | null
+  /**
+   * Names of the image variants uploaded to this template (see
+   * `templates.uploadImage`). Passes opt into one via `image_variant`.
+   */
+  image_variants: string[]
   created_at: string
   updated_at: string
 }
+
+/** Every template image slot that accepts a base (non-variant) image. */
+export type TemplateImageSlot = 'icon' | 'logo' | 'strip' | 'thumbnail' | 'background' | 'footer'
+
+/** The subset of image slots that can also hold named variants. */
+export type VariantImageSlot = 'strip' | 'thumbnail' | 'background'
+
+/** Returned by `templates.uploadImage` (and, with `deleted: true`, `templates.deleteImage`). */
+export interface TemplateImage {
+  object: 'template_image'
+  template_id: string
+  slot: TemplateImageSlot
+  /** The variant name, or `null` for the slot's base image. */
+  variant: string | null
+}
+
+export interface TemplateImageOptions {
+  /**
+   * Named variant to target instead of the base image. Only valid on
+   * `VariantImageSlot`s. Must match `^[a-z0-9][a-z0-9_-]{0,31}$`.
+   */
+  variant?: string
+}
+
+/** Image slots a single pass can override (see `passes.uploadImage`). Same set as `VariantImageSlot`. */
+export type PassImageSlot = VariantImageSlot
+
+/**
+ * Which layer a pass's resolved image comes from: a per-pass override, the
+ * pass's template image variant, or the template's base image.
+ */
+export type PassImageSource = 'pass' | 'variant' | 'template'
+
+/** The resolved image for each slot the pass renders with. Slots without an image are absent. */
+export type PassImages = Partial<Record<TemplateImageSlot, { source: PassImageSource }>>
 
 export interface Pass {
   id: string
@@ -95,6 +142,13 @@ export interface Pass {
    * to `url`.
    */
   google_wallet_url: string | null
+  /**
+   * The template image variant this pass renders with, or `null` for the
+   * template's base images.
+   */
+  image_variant: string | null
+  /** Where each of the pass's images resolves from (pass → variant → template). */
+  images: PassImages
   created_at: string
 }
 
@@ -172,6 +226,8 @@ export interface EventPass {
   download_url: string | null
   /** Google Wallet "Save" link; `null` when Google wasn't delivered. Falls back to `url`. */
   google_wallet_url: string | null
+  /** The template image variant the pass renders with, or `null` for the base images. */
+  image_variant: string | null
 }
 
 /**
@@ -204,6 +260,11 @@ export interface CreatePassParams {
   metadata?: Record<string, unknown>
   /** Override the template's wallet platforms for this pass. */
   platforms?: WalletPlatform[]
+  /**
+   * Render the pass with one of the template's image variants (see
+   * `Template.image_variants`). Omit to use the base images.
+   */
+  imageVariant?: string
 }
 
 export interface CreateTemplateParams {
@@ -230,6 +291,11 @@ export interface UpdateTemplateParams {
 export interface UpdatePassParams {
   fieldValues?: Record<string, string>
   metadata?: Record<string, unknown> | null
+  /**
+   * Switch the pass to a template image variant. Pass `null` to clear back to
+   * the base images; omit to leave it unchanged.
+   */
+  imageVariant?: string | null
 }
 
 export interface ListPassesParams {

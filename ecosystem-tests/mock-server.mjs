@@ -53,6 +53,8 @@ function pass(id, overrides = {}) {
     url: 'https://passmint.com/p/shrt_abc',
     download_url: 'https://passmint.com/p/shrt_abc/download',
     google_wallet_url: null,
+    image_variant: null,
+    images: { icon: { source: 'template' } },
     created_at: '2026-07-01T12:00:00.000Z',
     ...overrides,
   }
@@ -80,6 +82,7 @@ function canonicalEvent(id) {
           url: 'https://passmint.com/p/shrt_abc',
           download_url: 'https://passmint.com/p/shrt_abc/download',
           google_wallet_url: null,
+          image_variant: null,
         },
       },
     },
