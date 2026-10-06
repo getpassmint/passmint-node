@@ -138,6 +138,8 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 
 `create` also accepts `platforms` (`['apple', 'google']`) and `certificateSetId` overrides. The created pass includes `warnings` for platforms that could not be delivered.
 
+`create` and `update` accept `imageVariant` to render the pass with one of its template's image variants (see below). On `update`, `null` clears it back to the base images.
+
 ### Templates — `passmint.templates`
 
 | Method | Description |
@@ -147,6 +149,32 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 | `list()` | List all templates. |
 | `update(id, params)` | Update name, design, platforms, credentials, or archive state. |
 | `archive(id)` | Archive a template. |
+| `uploadImage(id, slot, data, options?)` | Upload a PNG/JPEG (`Uint8Array`, `ArrayBuffer` or `Buffer`) to an image slot, optionally as a named `variant`. |
+| `deleteImage(id, slot, options?)` | Remove a slot's image, or one named `variant` of it. |
+
+Image slots are `icon`, `logo`, `strip`, `thumbnail`, `background` and `footer`. The `strip`, `thumbnail` and `background` slots can also hold named variants (`^[a-z0-9][a-z0-9_-]{0,31}$`), listed on `template.image_variants`. A pass picks one with `imageVariant`, so the image can change without a separate template per state. Asking for a variant the template doesn't have fails with a 400 `unknown_image_variant` error.
+
+For example, a stamp card with one strip per stamp count. Upload the strips once:
+
+```ts
+import { readFile } from 'node:fs/promises'
+
+for (let count = 0; count <= 10; count++) {
+  const strip = await readFile(`./strips/stamps-${count}.png`)
+  await passmint.templates.uploadImage(templateId, 'strip', strip, { variant: String(count) })
+}
+```
+
+Then switch the strip each time a stamp is added:
+
+```ts
+await passmint.passes.update(passId, {
+  fieldValues: { stamps: String(count) },
+  imageVariant: String(count),
+})
+```
+
+The SDK base64-encodes the bytes itself without depending on `Buffer`, so `uploadImage` runs on Node, Cloudflare Workers, Deno and Bun.
 
 ### Events — `passmint.events`
 

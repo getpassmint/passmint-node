@@ -27,6 +27,7 @@ export class PassesResource {
     // override (dev cert), so only omit the key when truly unset.
     if (params.certificateSetId !== undefined) body.certificate_set_id = params.certificateSetId
     if (params.platforms !== undefined) body.platforms = params.platforms
+    if (params.imageVariant !== undefined) body.image_variant = params.imageVariant
     return this.http.request<Pass & { warnings: string[] }>({
       method: 'POST',
       path: '/v1/passes',
@@ -55,13 +56,16 @@ export class PassesResource {
   }
 
   update(id: string, params: UpdatePassParams, options: RequestOptions = {}): Promise<Pass> {
+    const body: Record<string, unknown> = {}
+    if (params.fieldValues !== undefined) body.field_values = params.fieldValues
+    if (params.metadata !== undefined) body.metadata = params.metadata
+    // null clears the variant back to the base images, so only omit the key
+    // when truly unset.
+    if (params.imageVariant !== undefined) body.image_variant = params.imageVariant
     return this.http.request<Pass>({
       method: 'PATCH',
       path: `/v1/passes/${encodeURIComponent(id)}`,
-      body: {
-        field_values: params.fieldValues,
-        metadata: params.metadata,
-      },
+      body,
       idempotencyKey: options.idempotencyKey ?? generateIdempotencyKey(),
     })
   }

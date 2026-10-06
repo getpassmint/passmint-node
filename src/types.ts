@@ -60,8 +60,36 @@ export interface Template {
   platforms: WalletPlatform[]
   certificate_set_id: string | null
   google_issuer_id: string | null
+  /**
+   * Names of the image variants uploaded to this template (see
+   * `templates.uploadImage`). Passes opt into one via `image_variant`.
+   */
+  image_variants: string[]
   created_at: string
   updated_at: string
+}
+
+/** Every template image slot that accepts a base (non-variant) image. */
+export type TemplateImageSlot = 'icon' | 'logo' | 'strip' | 'thumbnail' | 'background' | 'footer'
+
+/** The subset of image slots that can also hold named variants. */
+export type VariantImageSlot = 'strip' | 'thumbnail' | 'background'
+
+/** Returned by `templates.uploadImage` (and, with `deleted: true`, `templates.deleteImage`). */
+export interface TemplateImage {
+  object: 'template_image'
+  template_id: string
+  slot: TemplateImageSlot
+  /** The variant name, or `null` for the slot's base image. */
+  variant: string | null
+}
+
+export interface TemplateImageOptions {
+  /**
+   * Named variant to target instead of the base image. Only valid on
+   * `VariantImageSlot`s. Must match `^[a-z0-9][a-z0-9_-]{0,31}$`.
+   */
+  variant?: string
 }
 
 export interface Pass {
@@ -95,6 +123,11 @@ export interface Pass {
    * to `url`.
    */
   google_wallet_url: string | null
+  /**
+   * The template image variant this pass renders with, or `null` for the
+   * template's base images.
+   */
+  image_variant: string | null
   created_at: string
 }
 
@@ -204,6 +237,11 @@ export interface CreatePassParams {
   metadata?: Record<string, unknown>
   /** Override the template's wallet platforms for this pass. */
   platforms?: WalletPlatform[]
+  /**
+   * Render the pass with one of the template's image variants (see
+   * `Template.image_variants`). Omit to use the base images.
+   */
+  imageVariant?: string
 }
 
 export interface CreateTemplateParams {
@@ -230,6 +268,11 @@ export interface UpdateTemplateParams {
 export interface UpdatePassParams {
   fieldValues?: Record<string, string>
   metadata?: Record<string, unknown> | null
+  /**
+   * Switch the pass to a template image variant. Pass `null` to clear back to
+   * the base images; omit to leave it unchanged.
+   */
+  imageVariant?: string | null
 }
 
 export interface ListPassesParams {
