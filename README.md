@@ -132,6 +132,8 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 | `list(params?)` | List passes, filter by template or holder email. |
 | `update(id, params, options?)` | Update field values or metadata on a pass. |
 | `void(id)` | Void a pass. |
+| `uploadImage(id, slot, data)` | Give this pass its own `strip`, `thumbnail` or `background` image. Returns the updated pass. |
+| `deleteImage(id, slot)` | Remove the pass's own image for a slot. Returns the updated pass. |
 | `events(id)` | List raw lifecycle events for a pass (internal vocabulary, e.g. `installed`). Use `passmint.events` for the canonical `pass.*` stream. |
 
 `create` and `update` accept an optional `idempotencyKey` in `options`. If omitted, the SDK generates one for you so retries are safe by default.
@@ -139,6 +141,21 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 `create` also accepts `platforms` (`['apple', 'google']`) and `certificateSetId` overrides. The created pass includes `warnings` for platforms that could not be delivered.
 
 `create` and `update` accept `imageVariant` to render the pass with one of its template's image variants (see below). On `update`, `null` clears it back to the base images.
+
+#### Per-pass images
+
+A pass can have its own `strip`, `thumbnail` or `background` image, such as a member photo:
+
+```ts
+import { readFile } from 'node:fs/promises'
+
+const photoBytes = await readFile('./members/ada.jpg')
+await passmint.passes.uploadImage(pass.id, 'thumbnail', photoBytes)
+```
+
+Each slot resolves in three layers: the pass's own image wins, then the template image variant the pass uses (`imageVariant`), then the template's base image. `pass.images` reports the source of each resolved slot (`{ thumbnail: { source: 'pass' }, logo: { source: 'template' } }`). `deleteImage(pass.id, 'thumbnail')` removes the override so the slot falls back to the next layer. Use it to erase a holder's photo for privacy requests too.
+
+Images are PNG, JPEG or WebP, up to 8 MB. Both methods re-render the pass and push it to wallets. Which slots are allowed depends on the template's Apple style; a slot the style doesn't support fails with a 400 `image_slot_not_allowed` error, and updating a voided pass fails with a 409. On Google Wallet, `thumbnail` shows as the avatar on generic passes and as a card image on the other pass types.
 
 ### Templates — `passmint.templates`
 

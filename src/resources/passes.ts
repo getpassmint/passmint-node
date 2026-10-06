@@ -1,10 +1,12 @@
 import { type PassmintHttpClient, generateIdempotencyKey } from '../client'
+import { toBase64 } from '../encoding'
 import type {
   CreatePassParams,
   ListPassesParams,
   ListResponse,
   Pass,
   PassEvent,
+  PassImageSlot,
   RequestOptions,
   UpdatePassParams,
 } from '../types'
@@ -74,6 +76,33 @@ export class PassesResource {
     return this.http.request<Pass>({
       method: 'DELETE',
       path: `/v1/passes/${encodeURIComponent(id)}`,
+    })
+  }
+
+  /**
+   * Upload a PNG, JPEG or WebP (max 8 MB) as this pass's own image for a slot,
+   * overriding its template variant and base image. The pass is re-rendered
+   * and pushed to wallets; resolves with the updated pass. Re-uploading
+   * replaces the override.
+   */
+  uploadImage(passId: string, slot: PassImageSlot, data: Uint8Array | ArrayBuffer): Promise<Pass> {
+    // PUT is idempotent, so no Idempotency-Key.
+    return this.http.request<Pass>({
+      method: 'PUT',
+      path: `/v1/passes/${encodeURIComponent(passId)}/images/${encodeURIComponent(slot)}`,
+      body: { data: toBase64(data) },
+    })
+  }
+
+  /**
+   * Remove this pass's image override for a slot, falling back to its
+   * template variant or base image. Also use it to erase a holder's photo.
+   * Resolves with the updated pass.
+   */
+  deleteImage(passId: string, slot: PassImageSlot): Promise<Pass> {
+    return this.http.request<Pass>({
+      method: 'DELETE',
+      path: `/v1/passes/${encodeURIComponent(passId)}/images/${encodeURIComponent(slot)}`,
     })
   }
 

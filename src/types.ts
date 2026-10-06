@@ -99,6 +99,18 @@ export interface TemplateImageOptions {
   variant?: string
 }
 
+/** Image slots a single pass can override (see `passes.uploadImage`). Same set as `VariantImageSlot`. */
+export type PassImageSlot = VariantImageSlot
+
+/**
+ * Which layer a pass's resolved image comes from: a per-pass override, the
+ * pass's template image variant, or the template's base image.
+ */
+export type PassImageSource = 'pass' | 'variant' | 'template'
+
+/** The resolved image for each slot the pass renders with. Slots without an image are absent. */
+export type PassImages = Partial<Record<TemplateImageSlot, { source: PassImageSource }>>
+
 export interface Pass {
   id: string
   object: 'pass'
@@ -135,6 +147,8 @@ export interface Pass {
    * template's base images.
    */
   image_variant: string | null
+  /** Where each of the pass's images resolves from (pass → variant → template). */
+  images: PassImages
   created_at: string
 }
 
@@ -212,6 +226,8 @@ export interface EventPass {
   download_url: string | null
   /** Google Wallet "Save" link; `null` when Google wasn't delivered. Falls back to `url`. */
   google_wallet_url: string | null
+  /** The template image variant the pass renders with, or `null` for the base images. */
+  image_variant: string | null
 }
 
 /**

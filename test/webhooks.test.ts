@@ -104,6 +104,7 @@ describe('WebhooksResource.constructEvent', () => {
             url: 'https://passmint.com/p/shrt1',
             download_url: null,
             google_wallet_url: null,
+            image_variant: null,
           },
         },
       },
