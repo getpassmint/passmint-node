@@ -8,6 +8,7 @@ import type {
   PassPlatformStatus,
   PlatformDeliveryStatus,
   Template,
+  TemplateField,
   TemplateImage,
   TemplateImageSlot,
   UpdatePassParams,
@@ -36,6 +37,12 @@ describe('Template', () => {
     expectTypeOf<Template['platforms']>().toEqualTypeOf<WalletPlatform[]>()
     expectTypeOf<Template['certificate_set_id']>().toEqualTypeOf<string | null>()
     expectTypeOf<Template['google_issuer_id']>().toEqualTypeOf<string | null>()
+  })
+})
+
+describe('TemplateField', () => {
+  it('accepts an optional Apple change message', () => {
+    expectTypeOf<TemplateField['changeMessage']>().toEqualTypeOf<string | undefined>()
   })
 })
 

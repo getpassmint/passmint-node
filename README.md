@@ -152,6 +152,8 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 | `uploadImage(id, slot, data, options?)` | Upload a PNG/JPEG (`Uint8Array`, `ArrayBuffer` or `Buffer`) to an image slot, optionally as a named `variant`. |
 | `deleteImage(id, slot, options?)` | Remove a slot's image, or one named `variant` of it. |
 
+Template fields accept an optional `changeMessage`, a format string containing `%@` (e.g. `'You now have %@ stamps'`). When that field's value changes on a pass update, Apple Wallet shows it as a lock-screen notification with `%@` replaced by the new value. Fields without one update silently.
+
 Image slots are `icon`, `logo`, `strip`, `thumbnail`, `background` and `footer`. The `strip`, `thumbnail` and `background` slots can also hold named variants (`^[a-z0-9][a-z0-9_-]{0,31}$`), listed on `template.image_variants`. A pass picks one with `imageVariant`, so the image can change without a separate template per state. Asking for a variant the template doesn't have fails with a 400 `unknown_image_variant` error.
 
 For example, a stamp card with one strip per stamp count. Upload the strips once:

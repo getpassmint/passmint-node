@@ -23,6 +23,13 @@ export interface TemplateField {
   defaultValue: string | null
   textAlignment: 'left' | 'center' | 'right' | 'natural'
   required: boolean
+  /**
+   * Apple Wallet change message: a format string shown as a lock-screen
+   * notification when this field's value changes on a pass update. Must
+   * contain `%@`, which is replaced with the new value (e.g.
+   * `"You now have %@ stamps"`). Without it, Apple updates the pass silently.
+   */
+  changeMessage?: string
 }
 
 export interface TemplateDesign {
