@@ -1,10 +1,5 @@
-import type { PassmintEventType } from './generated/event-types'
-import type { components } from './generated/openapi'
-
-export { PASSMINT_EVENT_TYPES } from './generated/event-types'
-export type { PassmintEventType } from './generated/event-types'
-
-type Schemas = components['schemas']
+// Frozen copy of src/types.ts at @passmint/node 0.4.0 (293a5b1). Do not edit.
+// PASSMINT_EVENT_TYPES is a type-only union here so the fixture has no runtime code.
 
 export type PassmintMode = 'test' | 'live'
 
@@ -63,14 +58,25 @@ export interface TemplateDesign {
   barcodeMessageTemplate: string
 }
 
-/**
- * `type`, `apple_style` and `design` keep the hand-written, narrower types
- * (the API documents them as plain strings / a looser design object).
- */
-export type Template = Omit<Schemas['Template'], 'type' | 'apple_style' | 'design'> & {
+export interface Template {
+  id: string
+  object: 'template'
+  name: string
   type: TemplateType
   apple_style: AppleStyle
+  starter_template_id: string | null
   design: TemplateDesign
+  archived: boolean
+  platforms: WalletPlatform[]
+  certificate_set_id: string | null
+  google_issuer_id: string | null
+  /**
+   * Names of the image variants uploaded to this template (see
+   * `templates.uploadImage`). Passes opt into one via `image_variant`.
+   */
+  image_variants: string[]
+  created_at: string
+  updated_at: string
 }
 
 /** Every template image slot that accepts a base (non-variant) image. */
@@ -80,8 +86,12 @@ export type TemplateImageSlot = 'icon' | 'logo' | 'strip' | 'thumbnail' | 'backg
 export type VariantImageSlot = 'strip' | 'thumbnail' | 'background'
 
 /** Returned by `templates.uploadImage` (and, with `deleted: true`, `templates.deleteImage`). */
-export type TemplateImage = Omit<Schemas['TemplateImage'], 'slot'> & {
+export interface TemplateImage {
+  object: 'template_image'
+  template_id: string
   slot: TemplateImageSlot
+  /** The variant name, or `null` for the slot's base image. */
+  variant: string | null
 }
 
 export interface TemplateImageOptions {
@@ -104,37 +114,67 @@ export type PassImageSource = 'pass' | 'variant' | 'template'
 /** The resolved image for each slot the pass renders with. Slots without an image are absent. */
 export type PassImages = Partial<Record<TemplateImageSlot, { source: PassImageSource }>>
 
-export type Pass = Omit<Schemas['Pass'], 'mode' | 'field_values' | 'platform_status' | 'images'> & {
+export interface Pass {
+  id: string
+  object: 'pass'
+  short_id: string
+  template_id: string
+  certificate_set_id: string | null
+  serial_number: string
   mode: PassmintMode
-  /** Field values by field key. Typed as strings, as in 0.4.0; the API stores whatever JSON you send. */
+  holder_email: string | null
+  holder_name: string | null
   field_values: Record<string, string>
-  /** Per-platform delivery outcome. */
+  voided: boolean
+  voided_at: string | null
+  metadata: Record<string, unknown> | null
+  created_via_api: boolean
+  platforms: WalletPlatform[]
   platform_status: PassPlatformStatus | null
+  /** Passmint-hosted pass page; platform-detects and is always present. Use as your fallback. */
+  url: string
+  /**
+   * Direct download of the Apple `.pkpass`. Populated when Apple issuance
+   * succeeded; `null` when Apple wasn't delivered for this pass. Fall back to
+   * `url`.
+   */
+  download_url: string | null
+  /**
+   * Google Wallet "Save" link. Populated when Google issuance succeeded; `null`
+   * when Google wasn't delivered (e.g. no Google issuer configured). Fall back
+   * to `url`.
+   */
+  google_wallet_url: string | null
+  /**
+   * The template image variant this pass renders with, or `null` for the
+   * template's base images.
+   */
+  image_variant: string | null
   /** Where each of the pass's images resolves from (pass → variant → template). */
   images: PassImages
+  created_at: string
 }
 
-/** The internal pass-event vocabulary. Intentionally distinct from the canonical `pass.*` event types. */
-export type PassEventType =
-  | 'created'
-  | 'url_viewed'
-  | 'downloaded'
-  | 'installed'
-  | 'updated'
-  | 'update_delivered'
-  | 'update_failed'
-  | 'removed'
-  | 'voided'
-  | 'google_save_clicked'
-  | 'redeemed'
-  | 'download_link_created'
-
-export type PassEvent = Omit<Schemas['PassEvent'], 'type'> & {
+export interface PassEvent {
+  id: string
+  object: 'pass_event'
+  pass_id: string
   /**
    * Internal event vocabulary — intentionally distinct from the canonical
    * `pass.*` types that GET /v1/events and webhooks emit.
    */
-  type: PassEventType
+  type:
+    | 'created'
+    | 'url_viewed'
+    | 'downloaded'
+    | 'installed'
+    | 'updated'
+    | 'update_delivered'
+    | 'removed'
+    | 'voided'
+    | 'google_save_clicked'
+  metadata: Record<string, unknown> | null
+  created_at: string
 }
 
 export interface ListResponse<T> {
@@ -143,23 +183,67 @@ export interface ListResponse<T> {
   has_more: boolean
 }
 
-export type EventSource = Schemas['Event']['source']
+/**
+ * The Passmint Spec v1 — canonical lifecycle event types delivered to
+ * webhooks and returned by GET /v1/events. Platform detail lives in `source`.
+ */
+export type PassmintEventType =
+  | 'pass.issued'
+  | 'pass.add_intent'
+  | 'pass.added_to_wallet'
+  | 'pass.update_pushed'
+  | 'pass.update_delivered'
+  | 'pass.removed'
+  | 'pass.voided'
+
+export interface EventSource {
+  platform: 'apple' | 'google' | null
+  unit: 'device' | 'object' | null
+  confidence: 'exact' | 'best_effort' | 'unconfirmed'
+}
 
 /**
  * PII-minimized holder block carried on event payloads. The raw holder
  * email/name are only retrievable via GET /v1/passes/:id.
  */
-export type MinimizedHolder = Schemas['EventPassSnapshot']['holder']
+export interface MinimizedHolder {
+  email_hash: string | null
+  name_present: boolean
+}
 
 /** The pass snapshot embedded in a canonical event's `data.object`. */
-export type EventPass = Schemas['EventPassSnapshot']
+export interface EventPass {
+  id: string
+  short_id: string
+  template_id: string
+  organization_id: string
+  serial_number: string
+  holder: MinimizedHolder
+  voided: boolean
+  /** Passmint-hosted pass page; platform-detects and is always present. */
+  url: string
+  /** Direct Apple `.pkpass` download; `null` when Apple wasn't delivered. Falls back to `url`. */
+  download_url: string | null
+  /** Google Wallet "Save" link; `null` when Google wasn't delivered. Falls back to `url`. */
+  google_wallet_url: string | null
+  /** The template image variant the pass renders with, or `null` for the base images. */
+  image_variant: string | null
+}
 
 /**
  * Canonical event envelope — the body of every webhook delivery and each
  * item returned by GET /v1/events.
  */
-export type PassmintEvent = Omit<Schemas['Event'], 'previous_attributes'> & {
-  /** Always `null` today; typed as in 0.4.0 so existing fixtures keep compiling. */
+export interface PassmintEvent {
+  id: string
+  object: 'event'
+  type: PassmintEventType
+  api_version: string
+  created_at: string
+  idempotency_key: string
+  livemode: boolean
+  data: { object: { pass: EventPass } }
+  source: EventSource
   previous_attributes: Record<string, unknown> | null
 }
 
@@ -227,15 +311,32 @@ export interface RequestOptions {
 /** A canonical event type, or "*" to subscribe to everything. */
 export type WebhookEventSubscription = PassmintEventType | '*'
 
-export type Webhook = Omit<Schemas['Webhook'], 'events'> & {
+export interface Webhook {
+  id: string
+  object: 'webhook'
+  url: string
   events: WebhookEventSubscription[]
+  description: string | null
+  enabled: boolean
+  /** Only returned on create. Store it — it is not retrievable via the API afterwards. */
+  secret?: string
+  created_at: string
 }
 
 export type WebhookDeliveryStatus = 'pending' | 'in_progress' | 'delivered' | 'failed' | 'dead'
 
-export type WebhookDelivery = Omit<Schemas['WebhookDelivery'], 'event_type' | 'status'> & {
+export interface WebhookDelivery {
+  id: string
+  object: 'webhook_delivery'
+  webhook_id: string
   event_type: PassmintEventType
   status: WebhookDeliveryStatus
+  attempts: number
+  last_attempt_at: string | null
+  next_attempt_at: string | null
+  response_status: number | null
+  response_body: string | null
+  created_at: string
 }
 
 export interface CreateWebhookParams {
@@ -258,7 +359,12 @@ export interface BackfillParams {
   until?: string
 }
 
-export type BackfillResult = Schemas['WebhookBackfill']
+export interface BackfillResult {
+  object: 'backfill'
+  enqueued: number
+  capped: boolean
+  window: { since: string; until: string }
+}
 
 export interface ListEventsParams {
   type?: PassmintEventType
@@ -274,9 +380,24 @@ export interface ListEventsParams {
 
 export type FunnelGroupBy = 'total' | 'template' | 'platform' | 'date' | 'mode'
 
-export type FunnelSummary = Schemas['FunnelSummary']
+export interface FunnelSummary {
+  key: string
+  issued: number
+  add_intent: number
+  added: number
+  active: number
+  removed: number
+  update_pushed: number
+  update_delivered: number
+  install_rate: number | null
+  removal_rate: number | null
+  update_delivery_rate: number | null
+}
 
-export type FunnelResponse = Omit<Schemas['Funnel'], 'confidence'> & {
+export interface FunnelResponse {
+  object: 'funnel'
+  group_by: FunnelGroupBy
+  data: FunnelSummary[]
   /** Confidence caveats per metric (e.g. removals under-report). */
   confidence: Record<string, string>
 }
@@ -290,18 +411,10 @@ export interface FunnelParams {
   groupBy?: FunnelGroupBy
 }
 
-export type Account = Omit<Schemas['Account'], 'organization_slug'> & {
+export interface Account {
+  object: 'account'
+  organization_id: string
+  organization_name: string
   organization_slug: string
+  mode: PassmintMode
 }
-
-/** Delivery counts for a pass update, per wallet. */
-export type PassDelivery = Schemas['PassDelivery']
-
-/** Returned by `passes.createDownloadLink`. */
-export type DownloadLink = Schemas['PassDownloadLink']
-
-/** One redemption (scan) attempt against a pass. */
-export type Redemption = Schemas['Redemption']
-
-/** A template's redemption rule. */
-export type RedemptionPolicy = Schemas['RedemptionPolicy']
