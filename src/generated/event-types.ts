@@ -1,0 +1,15 @@
+// Generated from openapi.json by scripts/gen-event-types.mjs. Do not edit.
+
+export const PASSMINT_EVENT_TYPES = [
+  "pass.issued",
+  "pass.add_intent",
+  "pass.added_to_wallet",
+  "pass.update_pushed",
+  "pass.update_delivered",
+  "pass.update_failed",
+  "pass.removed",
+  "pass.voided",
+  "pass.redeemed",
+] as const
+
+export type PassmintEventType = (typeof PASSMINT_EVENT_TYPES)[number]

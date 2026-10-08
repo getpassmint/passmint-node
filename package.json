@@ -29,13 +29,17 @@
     "clean": "rm -rf dist .turbo",
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-version.mjs && pnpm format",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "sync-spec": "node scripts/sync-spec.mjs",
+    "generate": "openapi-typescript openapi.json -o src/generated/openapi.ts && node scripts/gen-event-types.mjs",
+    "generate:check": "pnpm generate && git diff --exit-code -- src/generated"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.17.2",
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.27.11",
     "@types/node": "^22.10.5",
+    "openapi-typescript": "7.13.0",
     "publint": "^0.3.2",
     "tsdown": "^0.10.1",
     "typescript": "^5.7.3",
