@@ -3250,7 +3250,7 @@ export interface components {
                 /** @enum {string} */
                 type: "authentication_error" | "authorization_error" | "invalid_request_error" | "not_found_error" | "rate_limit_error" | "idempotency_error" | "api_error" | "billing_error";
                 /**
-                 * @description A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is not a positive integer within the maximum), `invalid_cursor` (400, `starting_after` is not an id on this list) and `plan_limit_exceeded` (402).
+                 * @description A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is negative, fractional or non-numeric; 0 is valid and a limit over the maximum is clamped), `invalid_cursor` (400, `starting_after` is not an id on this list) and `plan_limit_exceeded` (402).
                  * @example api_key_expired
                  * @example insufficient_scope
                  * @example invalid_limit

@@ -2188,7 +2188,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is not a positive integer within the maximum), `invalid_cursor` (400, `starting_after` is not an id on this list) and `plan_limit_exceeded` (402).",
+                "description": "A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is negative, fractional or non-numeric; 0 is valid and a limit over the maximum is clamped), `invalid_cursor` (400, `starting_after` is not an id on this list) and `plan_limit_exceeded` (402).",
                 "examples": [
                   "api_key_expired",
                   "insufficient_scope",

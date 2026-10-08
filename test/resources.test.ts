@@ -639,7 +639,7 @@ describe('Phase 4 surface', () => {
       requireDownloadLink: true,
     })
     const body = calls[0]?.body as Record<string, unknown>
-    expect(body.redemption_policy).toEqual({ mode: 'count', maxUses: 5 })
+    expect(body.redemption_policy).toEqual({ mode: 'count', max_uses: 5 })
     expect(body.require_download_link).toBe(true)
   })
 
