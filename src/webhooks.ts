@@ -1,11 +1,14 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { PassmintHttpClient } from './client'
 import { PassmintError } from './errors'
+import { autoPaginate, withCursor } from './pagination'
 import type {
   BackfillParams,
   BackfillResult,
   CreateWebhookParams,
+  ListDeliveriesParams,
   ListResponse,
+  ListWebhooksParams,
   PassmintEvent,
   UpdateWebhookParams,
   Webhook,
@@ -52,8 +55,17 @@ export class WebhooksResource {
     })
   }
 
-  list(): Promise<ListResponse<Webhook>> {
-    return this.http.request<ListResponse<Webhook>>({ method: 'GET', path: '/v1/webhooks' })
+  list(params: ListWebhooksParams = {}): Promise<ListResponse<Webhook>> {
+    return this.http.request<ListResponse<Webhook>>({
+      method: 'GET',
+      path: '/v1/webhooks',
+      query: { limit: params.limit, starting_after: params.startingAfter },
+    })
+  }
+
+  /** Iterate every webhook endpoint, fetching further pages as needed. */
+  listAll(params: ListWebhooksParams = {}): AsyncIterableIterator<Webhook> {
+    return autoPaginate((cursor) => this.list(withCursor(params, cursor)))
   }
 
   update(id: string, params: UpdateWebhookParams): Promise<Webhook> {
@@ -82,12 +94,24 @@ export class WebhooksResource {
     })
   }
 
-  /** Last 100 delivery attempts for this endpoint, newest first. */
-  deliveries(id: string): Promise<ListResponse<WebhookDelivery>> {
+  /** Delivery attempts for this endpoint, newest first (last 100 by default). */
+  deliveries(
+    id: string,
+    params: ListDeliveriesParams = {},
+  ): Promise<ListResponse<WebhookDelivery>> {
     return this.http.request<ListResponse<WebhookDelivery>>({
       method: 'GET',
       path: `/v1/webhooks/${encodeURIComponent(id)}/deliveries`,
+      query: { limit: params.limit, starting_after: params.startingAfter },
     })
+  }
+
+  /** Iterate every delivery for this endpoint, fetching further pages as needed. */
+  listAllDeliveries(
+    id: string,
+    params: ListDeliveriesParams = {},
+  ): AsyncIterableIterator<WebhookDelivery> {
+    return autoPaginate((cursor) => this.deliveries(id, withCursor(params, cursor)))
   }
 
   /** Re-queue a delivery (including dead ones) for a fresh attempt. */

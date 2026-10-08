@@ -129,18 +129,33 @@ API keys starting with `pmk_test_` run against test mode, `pmk_live_` run agains
 | --- | --- |
 | `create(params, options?)` | Issue a new pass against a template. |
 | `retrieve(id)` | Fetch a pass by id. |
-| `list(params?)` | List passes, filter by template or holder email. |
-| `update(id, params, options?)` | Update field values or metadata on a pass. |
-| `void(id)` | Void a pass. |
+| `list(params?)` | List passes, filter by template or holder email. Takes `limit` and `startingAfter`. |
+| `listAll(params?)` | Async iterator over every matching pass (see Pagination). |
+| `update(id, params, options?)` | Update field values or metadata on a pass. Resolves with the pass plus `delivery` (per-wallet push counts) and `warnings`. |
+| `void(id)` | Void a pass. Resolves with the pass plus `warnings`. |
 | `uploadImage(id, slot, data)` | Give this pass its own `strip`, `thumbnail` or `background` image. Returns the updated pass. |
 | `deleteImage(id, slot)` | Remove the pass's own image for a slot. Returns the updated pass. |
-| `events(id)` | List raw lifecycle events for a pass (internal vocabulary, e.g. `installed`). Use `passmint.events` for the canonical `pass.*` stream. |
+| `events(id, params?)` | List raw lifecycle events for a pass (internal vocabulary, e.g. `installed`). Use `passmint.events` for the canonical `pass.*` stream. Takes `limit` and `startingAfter`; `listAllEvents(id)` iterates every page. |
+| `redemptions(id, params?)` | The pass's scan log: accepted and rejected redemption attempts. |
+| `createDownloadLink(id, params?)` | Create a short-lived download link for the pass (`expiresIn` in seconds). |
 
 `create` and `update` accept an optional `idempotencyKey` in `options`. If omitted, the SDK generates one for you so retries are safe by default.
 
 `create` also accepts `platforms` (`['apple', 'google']`) and `certificateSetId` overrides. The created pass includes `warnings` for platforms that could not be delivered.
 
 `create` and `update` accept `imageVariant` to render the pass with one of its template's image variants (see below). On `update`, `null` clears it back to the base images.
+
+#### Download links and redemptions
+
+```ts
+const link = await passmint.passes.createDownloadLink(pass.id, { expiresIn: 3600 })
+console.log(link.url, link.expires_at)
+
+const { data: scans } = await passmint.passes.redemptions(pass.id, { limit: 20 })
+for (const scan of scans) console.log(scan.decision, scan.reason, scan.scanned_at)
+```
+
+Templates take a `redemptionPolicy` (`{ mode: 'single_use' | 'reusable' | 'count', maxUses? }`) and `requireDownloadLink` on `create` and `update`. Template responses include `warnings` when the saved design breaks a recommended rule, and template designs accept `issuerName`, `locations` and `relevantDate`.
 
 #### Per-pass images
 
@@ -163,7 +178,8 @@ Images are PNG, JPEG or WebP, up to 8 MB. Both methods re-render the pass and pu
 | --- | --- |
 | `create(params, options?)` | Create a template. |
 | `retrieve(id)` | Fetch a template by id. |
-| `list()` | List all templates. |
+| `list(params?)` | List templates. Archived ones are left out unless `includeArchived: true`. Takes `limit` and `startingAfter`. |
+| `listAll(params?)` | Async iterator over every matching template. |
 | `update(id, params)` | Update name, design, platforms, credentials, or archive state. |
 | `archive(id)` | Archive a template. |
 | `uploadImage(id, slot, data, options?)` | Upload a PNG/JPEG (`Uint8Array`, `ArrayBuffer` or `Buffer`) to an image slot, optionally as a named `variant`. |
@@ -210,7 +226,19 @@ const { data, has_more } = await passmint.events.list({
 const next = await passmint.events.list({ startingAfter: data.at(-1)!.id })
 ```
 
-Canonical event types: `pass.issued`, `pass.add_intent`, `pass.added_to_wallet`, `pass.update_pushed`, `pass.update_delivered`, `pass.removed`, `pass.voided` (exported as `PASSMINT_EVENT_TYPES`).
+Canonical event types: `pass.issued`, `pass.add_intent`, `pass.added_to_wallet`, `pass.update_pushed`, `pass.update_delivered`, `pass.update_failed`, `pass.removed`, `pass.voided`, `pass.redeemed` (exported as `PASSMINT_EVENT_TYPES`).
+
+### Pagination
+
+List endpoints return `{ data, has_more }` and take `startingAfter` (the last item's id). To walk every page, use `listAll`, which fetches pages as you iterate and stops when `has_more` is false:
+
+```ts
+for await (const pass of passmint.passes.listAll({ templateId: 'tmpl_123' })) {
+  console.log(pass.id)
+}
+```
+
+`passes.redemptions` takes `limit` only (no `startingAfter`). `listAll` exists on `passes`, `templates`, `webhooks` and `events`. For your own list calls, `autoPaginate((startingAfter) => fetchPage(startingAfter))` is exported too.
 
 ### Metrics — `passmint.metrics`
 
@@ -233,11 +261,11 @@ Manage webhook endpoints:
 | Method | Description |
 | --- | --- |
 | `create(params)` | Create an endpoint. Returns the signing `secret` **once** — store it. |
-| `retrieve(id)` / `list()` | Fetch endpoints. |
+| `retrieve(id)` / `list(params?)` | Fetch endpoints. `list` takes `limit` and `startingAfter`; `listAll()` iterates every page. |
 | `update(id, params)` | Change url, subscribed events, description, or enabled state. |
 | `delete(id)` | Delete an endpoint. |
 | `backfill(id, { since, until? })` | Re-emit historical events to one endpoint. |
-| `deliveries(id)` | Last 100 delivery attempts, newest first. |
+| `deliveries(id, params?)` | Delivery attempts, newest first (last 100 by default). Takes `limit` and `startingAfter`; `listAllDeliveries(id)` iterates every page. |
 | `replayDelivery(id, deliveryId)` | Re-queue a delivery (including dead ones). |
 
 ```ts

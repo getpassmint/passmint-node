@@ -24,7 +24,17 @@ assert.equal(typeof Passmint, 'function')
 assert.equal(typeof PassmintError, 'function')
 assert.equal(typeof PassmintAuthError, 'function')
 assert.equal(typeof PassmintRateLimitError, 'function')
-assert.equal(PASSMINT_EVENT_TYPES.length, 7)
+assert.deepEqual([...PASSMINT_EVENT_TYPES], [
+  'pass.issued',
+  'pass.add_intent',
+  'pass.added_to_wallet',
+  'pass.update_pushed',
+  'pass.update_delivered',
+  'pass.update_failed',
+  'pass.removed',
+  'pass.voided',
+  'pass.redeemed',
+])
 assert.equal(detectMode(apiKey), 'test')
 
 const passmint = new Passmint({ apiKey, baseUrl })

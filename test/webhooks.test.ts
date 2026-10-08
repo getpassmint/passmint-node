@@ -123,15 +123,17 @@ describe('WebhooksResource.constructEvent', () => {
 })
 
 describe('PASSMINT_EVENT_TYPES', () => {
-  it('matches the canonical Passmint Spec v1 lifecycle set', () => {
+  it('matches the generated lifecycle set', () => {
     expect(PASSMINT_EVENT_TYPES).toEqual([
       'pass.issued',
       'pass.add_intent',
       'pass.added_to_wallet',
       'pass.update_pushed',
       'pass.update_delivered',
+      'pass.update_failed',
       'pass.removed',
       'pass.voided',
+      'pass.redeemed',
     ])
     expectTypeOf<PassmintEventType>().toEqualTypeOf<(typeof PASSMINT_EVENT_TYPES)[number]>()
   })

@@ -1,8 +1,11 @@
 import { type PassmintHttpClient, generateIdempotencyKey } from '../client'
 import { toBase64 } from '../encoding'
+import { autoPaginate, withCursor } from '../pagination'
 import type {
   CreateTemplateParams,
   ListResponse,
+  ListTemplatesParams,
+  RedemptionPolicy,
   RequestOptions,
   Template,
   TemplateImage,
@@ -11,6 +14,14 @@ import type {
   UpdateTemplateParams,
   VariantImageSlot,
 } from '../types'
+
+/** The request schema spells the cap `max_uses`; the camelCase param type matches what GET returns. */
+function redemptionPolicyBody(policy: RedemptionPolicy) {
+  return {
+    mode: policy.mode,
+    ...(policy.maxUses !== undefined ? { max_uses: policy.maxUses } : {}),
+  }
+}
 
 export class TemplatesResource {
   constructor(private readonly http: PassmintHttpClient) {}
@@ -24,6 +35,10 @@ export class TemplatesResource {
       starter_template_id: params.starterTemplateId,
     }
     if (params.platforms !== undefined) body.platforms = params.platforms
+    if (params.redemptionPolicy !== undefined)
+      body.redemption_policy = redemptionPolicyBody(params.redemptionPolicy)
+    if (params.requireDownloadLink !== undefined)
+      body.require_download_link = params.requireDownloadLink
     return this.http.request<Template>({
       method: 'POST',
       path: '/v1/templates',
@@ -39,11 +54,22 @@ export class TemplatesResource {
     })
   }
 
-  list(): Promise<ListResponse<Template>> {
+  list(params: ListTemplatesParams = {}): Promise<ListResponse<Template>> {
     return this.http.request<ListResponse<Template>>({
       method: 'GET',
       path: '/v1/templates',
+      query: {
+        include_archived:
+          params.includeArchived === undefined ? undefined : String(params.includeArchived),
+        limit: params.limit,
+        starting_after: params.startingAfter,
+      },
     })
+  }
+
+  /** Iterate every matching template, fetching further pages as needed. */
+  listAll(params: ListTemplatesParams = {}): AsyncIterableIterator<Template> {
+    return autoPaginate((cursor) => this.list(withCursor(params, cursor)))
   }
 
   update(id: string, params: UpdateTemplateParams): Promise<Template> {
@@ -56,6 +82,10 @@ export class TemplatesResource {
     // only omit the keys when truly unset.
     if (params.certificateSetId !== undefined) body.certificate_set_id = params.certificateSetId
     if (params.googleIssuerId !== undefined) body.google_issuer_id = params.googleIssuerId
+    if (params.redemptionPolicy !== undefined)
+      body.redemption_policy = redemptionPolicyBody(params.redemptionPolicy)
+    if (params.requireDownloadLink !== undefined)
+      body.require_download_link = params.requireDownloadLink
     return this.http.request<Template>({
       method: 'PATCH',
       path: `/v1/templates/${encodeURIComponent(id)}`,

@@ -14,6 +14,6 @@ describe('Passmint client', () => {
   })
 
   it('re-exports the canonical event type list', () => {
-    expect(PASSMINT_EVENT_TYPES).toHaveLength(7)
+    expect(PASSMINT_EVENT_TYPES).toHaveLength(9)
   })
 })

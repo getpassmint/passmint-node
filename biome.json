@@ -7,7 +7,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignore": ["dist", "node_modules", ".turbo", "coverage", "ecosystem-tests"]
+    "ignore": [
+      "dist",
+      "node_modules",
+      ".turbo",
+      "coverage",
+      "ecosystem-tests",
+      "src/generated",
+      "openapi.json"
+    ]
   },
   "linter": {
     "enabled": true,
