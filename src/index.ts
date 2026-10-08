@@ -63,6 +63,7 @@ export type {
   TemplateImage,
   TemplateImageOptions,
   TemplateImageSlot,
+  TemplateLocation,
   TemplateType,
   UpdatePassParams,
   UpdateTemplateParams,
