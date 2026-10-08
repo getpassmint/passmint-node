@@ -83,7 +83,11 @@ describe('0.4.0 -> now: shared unions are unchanged', () => {
   it('PassmintMode', () => expectTypeOf<Now.PassmintMode>().toEqualTypeOf<V04.PassmintMode>())
   it('PlatformDeliveryStatus', () =>
     expectTypeOf<Now.PlatformDeliveryStatus>().toEqualTypeOf<V04.PlatformDeliveryStatus>())
-  it('TemplateDesign', () => expectTypeOf<Now.TemplateDesign>().toEqualTypeOf<V04.TemplateDesign>())
+  // Gained optional issuerName/locations/relevantDate, so mutual assignability, not equality.
+  it('TemplateDesign (gained optional fields)', () => {
+    expectTypeOf<V04.TemplateDesign>().toMatchTypeOf<Now.TemplateDesign>()
+    expectTypeOf<Now.TemplateDesign>().toMatchTypeOf<V04.TemplateDesign>()
+  })
   it('TemplateField', () => expectTypeOf<Now.TemplateField>().toEqualTypeOf<V04.TemplateField>())
   it('TemplateImageSlot', () =>
     expectTypeOf<Now.TemplateImageSlot>().toEqualTypeOf<V04.TemplateImageSlot>())

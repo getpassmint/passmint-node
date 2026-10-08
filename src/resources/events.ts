@@ -1,4 +1,5 @@
 import type { PassmintHttpClient } from '../client'
+import { autoPaginate, withCursor } from '../pagination'
 import type { ListEventsParams, ListResponse, PassmintEvent } from '../types'
 
 export class EventsResource {
@@ -18,5 +19,9 @@ export class EventsResource {
         limit: params.limit,
       },
     })
+  }
+  /** Iterate every matching event, fetching further pages as needed. */
+  listAll(params: ListEventsParams = {}): AsyncIterableIterator<PassmintEvent> {
+    return autoPaginate((cursor) => this.list(withCursor(params, cursor)))
   }
 }

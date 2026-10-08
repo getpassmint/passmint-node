@@ -13,6 +13,7 @@ export {
   PassmintRateLimitError,
 } from './errors'
 export type { ApiErrorPayload } from './errors'
+export { autoPaginate } from './pagination'
 export { PASSMINT_EVENT_TYPES } from './types'
 export type {
   Account,
@@ -21,6 +22,7 @@ export type {
   BackfillResult,
   BarcodeFormat,
   CreatePassParams,
+  CreateDownloadLinkParams,
   CreateTemplateParams,
   CreateWebhookParams,
   DownloadLink,
@@ -30,9 +32,14 @@ export type {
   FunnelParams,
   FunnelResponse,
   FunnelSummary,
+  ListDeliveriesParams,
   ListEventsParams,
+  ListPassEventsParams,
   ListPassesParams,
+  ListRedemptionsParams,
   ListResponse,
+  ListTemplatesParams,
+  ListWebhooksParams,
   MinimizedHolder,
   Pass,
   PassDelivery,

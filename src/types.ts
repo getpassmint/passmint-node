@@ -61,6 +61,12 @@ export interface TemplateDesign {
   backFields: TemplateField[]
   barcodeFormat: BarcodeFormat
   barcodeMessageTemplate: string
+  /** Issuer name shown on the pass (Google Wallet issuer name). `null` clears it. */
+  issuerName?: string | null
+  /** Locations that surface the pass on the lock screen. */
+  locations?: Array<Record<string, unknown>> | null
+  /** ISO 8601 date the pass becomes relevant (lock-screen surfacing). */
+  relevantDate?: string | null
 }
 
 /**
@@ -229,6 +235,10 @@ export interface CreateTemplateParams {
   starterTemplateId?: string
   /** Defaults to ["apple"] on the server. */
   platforms?: WalletPlatform[]
+  /** How many times a pass may be redeemed. Defaults to reusable on the server. */
+  redemptionPolicy?: RedemptionPolicy
+  /** Only issue passes whose holders arrive through a download link. */
+  requireDownloadLink?: boolean
 }
 
 export interface UpdateTemplateParams {
@@ -240,6 +250,8 @@ export interface UpdateTemplateParams {
   certificateSetId?: string | null
   /** Pass `null` to detach the Google issuer. */
   googleIssuerId?: string | null
+  redemptionPolicy?: RedemptionPolicy
+  requireDownloadLink?: boolean
 }
 
 export interface UpdatePassParams {
@@ -256,6 +268,43 @@ export interface ListPassesParams {
   templateId?: string
   holderEmail?: string
   limit?: number
+  /** Pass id to paginate after (keyset cursor). */
+  startingAfter?: string
+}
+
+export interface ListTemplatesParams {
+  /** Include archived templates. Defaults to active only. */
+  includeArchived?: boolean
+  limit?: number
+  /** Template id to paginate after (keyset cursor). */
+  startingAfter?: string
+}
+
+export interface ListPassEventsParams {
+  limit?: number
+  /** Pass event id to paginate after (keyset cursor). */
+  startingAfter?: string
+}
+
+export interface ListRedemptionsParams {
+  limit?: number
+}
+
+export interface ListWebhooksParams {
+  limit?: number
+  /** Webhook id to paginate after (keyset cursor). */
+  startingAfter?: string
+}
+
+export interface ListDeliveriesParams {
+  limit?: number
+  /** Delivery id to paginate after (keyset cursor). */
+  startingAfter?: string
+}
+
+export interface CreateDownloadLinkParams {
+  /** Link lifetime in seconds. The server picks a default when omitted. */
+  expiresIn?: number
 }
 
 export interface RequestOptions {

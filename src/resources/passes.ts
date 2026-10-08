@@ -1,12 +1,19 @@
 import { type PassmintHttpClient, generateIdempotencyKey } from '../client'
 import { toBase64 } from '../encoding'
+import { autoPaginate, withCursor } from '../pagination'
 import type {
+  CreateDownloadLinkParams,
   CreatePassParams,
+  DownloadLink,
+  ListPassEventsParams,
   ListPassesParams,
+  ListRedemptionsParams,
   ListResponse,
   Pass,
+  PassDelivery,
   PassEvent,
   PassImageSlot,
+  Redemption,
   RequestOptions,
   UpdatePassParams,
 } from '../types'
@@ -53,18 +60,28 @@ export class PassesResource {
         template_id: params.templateId,
         holder_email: params.holderEmail,
         limit: params.limit,
+        starting_after: params.startingAfter,
       },
     })
   }
 
-  update(id: string, params: UpdatePassParams, options: RequestOptions = {}): Promise<Pass> {
+  /** Iterate every matching pass, fetching further pages as needed. */
+  listAll(params: ListPassesParams = {}): AsyncIterableIterator<Pass> {
+    return autoPaginate((cursor) => this.list(withCursor(params, cursor)))
+  }
+
+  update(
+    id: string,
+    params: UpdatePassParams,
+    options: RequestOptions = {},
+  ): Promise<Pass & { delivery: PassDelivery; warnings: string[] }> {
     const body: Record<string, unknown> = {}
     if (params.fieldValues !== undefined) body.field_values = params.fieldValues
     if (params.metadata !== undefined) body.metadata = params.metadata
     // null clears the variant back to the base images, so only omit the key
     // when truly unset.
     if (params.imageVariant !== undefined) body.image_variant = params.imageVariant
-    return this.http.request<Pass>({
+    return this.http.request<Pass & { delivery: PassDelivery; warnings: string[] }>({
       method: 'PATCH',
       path: `/v1/passes/${encodeURIComponent(id)}`,
       body,
@@ -72,8 +89,8 @@ export class PassesResource {
     })
   }
 
-  void(id: string): Promise<Pass> {
-    return this.http.request<Pass>({
+  void(id: string): Promise<Pass & { warnings: string[] }> {
+    return this.http.request<Pass & { warnings: string[] }>({
       method: 'DELETE',
       path: `/v1/passes/${encodeURIComponent(id)}`,
     })
@@ -106,10 +123,39 @@ export class PassesResource {
     })
   }
 
-  events(id: string): Promise<ListResponse<PassEvent>> {
+  events(id: string, params: ListPassEventsParams = {}): Promise<ListResponse<PassEvent>> {
     return this.http.request<ListResponse<PassEvent>>({
       method: 'GET',
       path: `/v1/passes/${encodeURIComponent(id)}/events`,
+      query: { limit: params.limit, starting_after: params.startingAfter },
+    })
+  }
+
+  /** Iterate every event for this pass, fetching further pages as needed. */
+  listAllEvents(id: string, params: ListPassEventsParams = {}): AsyncIterableIterator<PassEvent> {
+    return autoPaginate((cursor) => this.events(id, withCursor(params, cursor)))
+  }
+
+  /** The pass's scan log: every accepted or rejected redemption attempt, newest first. */
+  redemptions(id: string, params: ListRedemptionsParams = {}): Promise<ListResponse<Redemption>> {
+    return this.http.request<ListResponse<Redemption>>({
+      method: 'GET',
+      path: `/v1/passes/${encodeURIComponent(id)}/redemptions`,
+      query: { limit: params.limit },
+    })
+  }
+
+  /**
+   * Create a short-lived link that downloads this pass. Not an idempotent
+   * route on the server, so no Idempotency-Key is sent.
+   */
+  createDownloadLink(id: string, params: CreateDownloadLinkParams = {}): Promise<DownloadLink> {
+    const body: Record<string, unknown> = {}
+    if (params.expiresIn !== undefined) body.expires_in = params.expiresIn
+    return this.http.request<DownloadLink>({
+      method: 'POST',
+      path: `/v1/passes/${encodeURIComponent(id)}/download-links`,
+      body,
     })
   }
 }

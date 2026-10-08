@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PassmintHttpClient } from '../src/client'
+import { Passmint } from '../src/index'
 import { EventsResource } from '../src/resources/events'
 import { MeResource } from '../src/resources/me'
 import { MetricsResource } from '../src/resources/metrics'
@@ -565,3 +566,147 @@ describe('MeResource', () => {
     expect(account.organization_id).toBe('org_1')
   })
 })
+
+describe('Phase 4 surface', () => {
+  it('templates.list: sends include_archived, limit and starting_after', async () => {
+    const { http, calls } = fakeHttp()
+    await new TemplatesResource(http).list({
+      includeArchived: true,
+      limit: 10,
+      startingAfter: 'tmpl_1',
+    })
+    expect(calls[0]?.path).toBe('/v1/templates')
+    expect(calls[0]?.query).toEqual({
+      include_archived: 'true',
+      limit: 10,
+      starting_after: 'tmpl_1',
+    })
+  })
+
+  it('templates.list: no params means no query string', async () => {
+    const { http, calls } = fakeHttp()
+    await new TemplatesResource(http).list()
+    expect(calls[0]?.query ?? {}).toEqual({})
+    expect(await requestedUrl((p) => p.templates.list())).not.toContain('?')
+  })
+
+  it('passes.list: sends starting_after', async () => {
+    const { http, calls } = fakeHttp()
+    await new PassesResource(http).list({ startingAfter: 'pass_1' })
+    expect(calls[0]?.query?.starting_after).toBe('pass_1')
+  })
+
+  it('passes.events: sends limit and starting_after, none by default', async () => {
+    const { http, calls } = fakeHttp()
+    const passes = new PassesResource(http)
+    await passes.events('pass_1', { limit: 5, startingAfter: 'pe_1' })
+    await passes.events('pass_1')
+    expect(await requestedUrl((p) => p.passes.events('pass_1'))).not.toContain('?')
+    expect(calls[0]?.path).toBe('/v1/passes/pass_1/events')
+    expect(calls[0]?.query).toEqual({ limit: 5, starting_after: 'pe_1' })
+  })
+
+  it('passes.redemptions: GETs the scan log with limit', async () => {
+    const { http, calls } = fakeHttp()
+    await new PassesResource(http).redemptions('pass_1', { limit: 5 })
+    expect(calls[0]?.method).toBe('GET')
+    expect(calls[0]?.path).toBe('/v1/passes/pass_1/redemptions')
+    expect(calls[0]?.query).toEqual({ limit: 5 })
+  })
+
+  it('passes.createDownloadLink: POSTs expires_in', async () => {
+    const { http, calls } = fakeHttp()
+    await new PassesResource(http).createDownloadLink('pass_1', { expiresIn: 3600 })
+    expect(calls[0]?.method).toBe('POST')
+    expect(calls[0]?.path).toBe('/v1/passes/pass_1/download-links')
+    expect(calls[0]?.body).toEqual({ expires_in: 3600 })
+  })
+
+  it('passes.createDownloadLink: params are optional', async () => {
+    const { http, calls } = fakeHttp()
+    await new PassesResource(http).createDownloadLink('pass_1')
+    expect(calls[0]?.body).toEqual({})
+  })
+
+  it('templates.create: maps redemptionPolicy and requireDownloadLink', async () => {
+    const { http, calls } = fakeHttp()
+    await new TemplatesResource(http).create({
+      name: 'T',
+      type: 'generic',
+      appleStyle: 'generic',
+      design: {} as never,
+      redemptionPolicy: { mode: 'count', maxUses: 5 },
+      requireDownloadLink: true,
+    })
+    const body = calls[0]?.body as Record<string, unknown>
+    expect(body.redemption_policy).toEqual({ mode: 'count', maxUses: 5 })
+    expect(body.require_download_link).toBe(true)
+  })
+
+  it('templates.update: maps redemptionPolicy and requireDownloadLink', async () => {
+    const { http, calls } = fakeHttp()
+    await new TemplatesResource(http).update('tmpl_1', {
+      redemptionPolicy: { mode: 'single_use' },
+      requireDownloadLink: false,
+    })
+    expect(calls[0]?.body).toEqual({
+      redemption_policy: { mode: 'single_use' },
+      require_download_link: false,
+    })
+  })
+
+  it('webhooks.list: sends limit and starting_after, none by default', async () => {
+    const { http, calls } = fakeHttp()
+    const webhooks = new WebhooksResource(http)
+    await webhooks.list({ limit: 1, startingAfter: 'wh_1' })
+    expect(calls[0]?.query).toEqual({ limit: 1, starting_after: 'wh_1' })
+    expect(await requestedUrl((p) => p.webhooks.list())).not.toContain('?')
+  })
+
+  it('webhooks.deliveries: sends limit and starting_after', async () => {
+    const { http, calls } = fakeHttp()
+    await new WebhooksResource(http).deliveries('wh_1', { limit: 2, startingAfter: 'd_1' })
+    expect(calls[0]?.query).toEqual({ limit: 2, starting_after: 'd_1' })
+  })
+
+  it('listAll walks pages without sending an undefined cursor', async () => {
+    const pages = [
+      { object: 'list', data: [{ id: 'pass_1' }, { id: 'pass_2' }], has_more: true },
+      { object: 'list', data: [{ id: 'pass_3' }], has_more: false },
+    ]
+    const calls: Captured[] = []
+    const http = {
+      request: vi.fn(async (req: Captured) => {
+        calls.push(req)
+        return pages.shift()
+      }),
+    } as unknown as PassmintHttpClient
+    const ids: string[] = []
+    for await (const p of new PassesResource(http).listAll({ limit: 2 })) ids.push(p.id)
+    expect(ids).toEqual(['pass_1', 'pass_2', 'pass_3'])
+    expect(calls[0]?.query).toEqual({ limit: 2 })
+    expect(calls[0]?.query?.starting_after).toBeUndefined()
+    expect(calls[1]?.query).toEqual({ limit: 2, starting_after: 'pass_2' })
+  })
+
+  it('templates, webhooks, deliveries and events expose listAll', () => {
+    const { http } = fakeHttp()
+    expect(typeof new TemplatesResource(http).listAll).toBe('function')
+    expect(typeof new WebhooksResource(http).listAll).toBe('function')
+    expect(typeof new WebhooksResource(http).listAllDeliveries).toBe('function')
+    expect(typeof new EventsResource(http).listAll).toBe('function')
+  })
+})
+
+/** Runs a call through the real client with a stub fetch and returns the URL it requested. */
+async function requestedUrl(run: (passmint: Passmint) => Promise<unknown>): Promise<string> {
+  const urls: string[] = []
+  const fetchImpl = (async (url: string | URL | Request) => {
+    urls.push(String(url))
+    return new Response(JSON.stringify({ object: 'list', data: [], has_more: false }), {
+      status: 200,
+    })
+  }) as unknown as typeof fetch
+  await run(new Passmint({ apiKey: 'pmk_test_x', fetch: fetchImpl }))
+  return urls[0] ?? ''
+}

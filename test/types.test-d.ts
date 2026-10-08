@@ -3,15 +3,22 @@ import type { PassesResource } from '../src/resources/passes'
 import type { TemplatesResource } from '../src/resources/templates'
 import type {
   CreatePassParams,
+  DownloadLink,
   EventPass,
+  ListResponse,
   Pass,
+  PassDelivery,
   PassEvent,
   PassImageSlot,
   PassImageSource,
   PassImages,
   PassPlatformStatus,
+  PassmintEvent,
   PlatformDeliveryStatus,
+  Redemption,
+  RedemptionPolicy,
   Template,
+  TemplateDesign,
   TemplateField,
   TemplateImage,
   TemplateImageSlot,
@@ -128,5 +135,50 @@ describe('per-pass images', () => {
       // @ts-expect-error no variant option on per-pass images
       passes.uploadImage('pass_1', 'strip', bytes, { variant: '1' })
     })
+  })
+})
+
+describe('Phase 4 surface types', () => {
+  it('passes.update and passes.void carry delivery and warnings', () => {
+    expectTypeOf<Awaited<ReturnType<PassesResource['update']>>>().toEqualTypeOf<
+      Pass & { delivery: PassDelivery; warnings: string[] }
+    >()
+    expectTypeOf<Awaited<ReturnType<PassesResource['void']>>>().toEqualTypeOf<
+      Pass & { warnings: string[] }
+    >()
+  })
+
+  it('TemplateDesign gains issuerName, locations and relevantDate', () => {
+    expectTypeOf<TemplateDesign['issuerName']>().toEqualTypeOf<string | null | undefined>()
+    expectTypeOf<TemplateDesign['relevantDate']>().toEqualTypeOf<string | null | undefined>()
+  })
+
+  it('templates expose redemption_policy, require_download_link and warnings', () => {
+    expectTypeOf<Template['require_download_link']>().toEqualTypeOf<boolean>()
+    expectTypeOf<Template['redemption_policy']>().toEqualTypeOf<RedemptionPolicy>()
+    expectTypeOf<Template['warnings']>().toEqualTypeOf<string[] | undefined>()
+  })
+
+  it('createDownloadLink and redemptions resolve to the generated shapes', () => {
+    expectTypeOf<
+      Awaited<ReturnType<PassesResource['createDownloadLink']>>
+    >().toEqualTypeOf<DownloadLink>()
+    expectTypeOf<Awaited<ReturnType<PassesResource['redemptions']>>>().toEqualTypeOf<
+      ListResponse<Redemption>
+    >()
+  })
+
+  it('listAll returns an async iterator of the item type', () => {
+    expectTypeOf<ReturnType<PassesResource['listAll']>>().toEqualTypeOf<
+      AsyncIterableIterator<Pass>
+    >()
+    expectTypeOf<ReturnType<TemplatesResource['listAll']>>().toEqualTypeOf<
+      AsyncIterableIterator<Template>
+    >()
+  })
+
+  it('pass.update_failed carries a delivery_failure payload', () => {
+    type Failed = Extract<PassmintEvent, { type: 'pass.update_failed' }>
+    expectTypeOf<Failed['data']['object']>().toHaveProperty('delivery_failure')
   })
 })
