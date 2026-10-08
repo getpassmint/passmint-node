@@ -95,6 +95,21 @@ describe('0.4.0 -> now: shared unions are unchanged', () => {
     expectTypeOf<Now.WebhookDeliveryStatus>().toEqualTypeOf<V04.WebhookDeliveryStatus>())
 })
 
+describe('remaining 0.4.0 type exports still exist', () => {
+  it('ApiErrorPayload', () => expectTypeOf<Now.ApiErrorPayload>().not.toBeAny())
+  it('WebhookEvent', () => expectTypeOf<Now.WebhookEvent>().toEqualTypeOf<Now.PassmintEvent>())
+  it('PassmintOptions', () => expectTypeOf<Now.PassmintOptions>().not.toBeAny())
+})
+
+describe('pass event types', () => {
+  it('include update_not_delivered and the other platform event types', () => {
+    expectTypeOf<'update_not_delivered'>().toMatchTypeOf<Now.PassEventType>()
+    expectTypeOf<'update_failed'>().toMatchTypeOf<Now.PassEventType>()
+    expectTypeOf<'redeemed'>().toMatchTypeOf<Now.PassEventType>()
+    expectTypeOf<'download_link_created'>().toMatchTypeOf<Now.PassEventType>()
+  })
+})
+
 describe('event types', () => {
   it('still contain every 0.4.0 type, plus the new ones', () => {
     expectTypeOf<V04.PassmintEventType>().toMatchTypeOf<Now.PassmintEventType>()

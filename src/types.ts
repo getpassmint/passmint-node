@@ -71,6 +71,11 @@ export type Template = Omit<Schemas['Template'], 'type' | 'apple_style' | 'desig
   type: TemplateType
   apple_style: AppleStyle
   design: TemplateDesign
+  /**
+   * Names of the image variants uploaded to this template (see
+   * `templates.uploadImage`). Passes opt into one via `image_variant`.
+   */
+  image_variants: string[]
 }
 
 /** Every template image slot that accepts a base (non-variant) image. */
@@ -106,8 +111,31 @@ export type PassImages = Partial<Record<TemplateImageSlot, { source: PassImageSo
 
 export type Pass = Omit<Schemas['Pass'], 'mode' | 'field_values' | 'platform_status' | 'images'> & {
   mode: PassmintMode
-  /** Field values by field key. Typed as strings, as in 0.4.0; the API stores whatever JSON you send. */
+  /**
+   * Field values by field key. Normally strings, but any JSON value you sent is
+   * stored and returned as-is. Typed `Record<string, string>` for 0.4.0
+   * compatibility.
+   */
   field_values: Record<string, string>
+  /** Passmint-hosted pass page; platform-detects and is always present. Use as your fallback. */
+  url: string
+  /**
+   * Direct download of the Apple `.pkpass`. Populated when Apple issuance
+   * succeeded; `null` when Apple wasn't delivered for this pass. Fall back to
+   * `url`.
+   */
+  download_url: string | null
+  /**
+   * Google Wallet "Save" link. Populated when Google issuance succeeded; `null`
+   * when Google wasn't delivered (e.g. no Google issuer configured). Fall back
+   * to `url`.
+   */
+  google_wallet_url: string | null
+  /**
+   * The template image variant this pass renders with, or `null` for the
+   * template's base images.
+   */
+  image_variant: string | null
   /** Per-platform delivery outcome. */
   platform_status: PassPlatformStatus | null
   /** Where each of the pass's images resolves from (pass → variant → template). */
@@ -121,6 +149,7 @@ export type PassEventType =
   | 'downloaded'
   | 'installed'
   | 'updated'
+  | 'update_not_delivered'
   | 'update_delivered'
   | 'update_failed'
   | 'removed'
@@ -152,7 +181,16 @@ export type EventSource = Schemas['Event']['source']
 export type MinimizedHolder = Schemas['EventPassSnapshot']['holder']
 
 /** The pass snapshot embedded in a canonical event's `data.object`. */
-export type EventPass = Schemas['EventPassSnapshot']
+export type EventPass = Schemas['EventPassSnapshot'] & {
+  /** Passmint-hosted pass page; platform-detects and is always present. */
+  url: string
+  /** Direct Apple `.pkpass` download; `null` when Apple wasn't delivered. Falls back to `url`. */
+  download_url: string | null
+  /** Google Wallet "Save" link; `null` when Google wasn't delivered. Falls back to `url`. */
+  google_wallet_url: string | null
+  /** The template image variant the pass renders with, or `null` for the base images. */
+  image_variant: string | null
+}
 
 /**
  * Canonical event envelope — the body of every webhook delivery and each
@@ -229,6 +267,8 @@ export type WebhookEventSubscription = PassmintEventType | '*'
 
 export type Webhook = Omit<Schemas['Webhook'], 'events'> & {
   events: WebhookEventSubscription[]
+  /** Only returned on create. Store it — it is not retrievable via the API afterwards. */
+  secret?: string
 }
 
 export type WebhookDeliveryStatus = 'pending' | 'in_progress' | 'delivered' | 'failed' | 'dead'
@@ -291,6 +331,10 @@ export interface FunnelParams {
 }
 
 export type Account = Omit<Schemas['Account'], 'organization_slug'> & {
+  /**
+   * Can be `null` at runtime; typed `string` for 0.4.0 compatibility. Check
+   * before relying on it.
+   */
   organization_slug: string
 }
 
