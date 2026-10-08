@@ -40,6 +40,11 @@ export interface TemplateField {
   changeMessage?: string
 }
 
+/** A place a pass is relevant near, derived from the spec's template design input. */
+export type TemplateLocation = NonNullable<
+  NonNullable<Schemas['CreateTemplateBody']['design']>['locations']
+>[number]
+
 export interface TemplateDesign {
   description: string
   logoText: string | null
@@ -63,8 +68,8 @@ export interface TemplateDesign {
   barcodeMessageTemplate: string
   /** Issuer name shown on the pass (Google Wallet issuer name). `null` clears it. */
   issuerName?: string | null
-  /** Locations that surface the pass on the lock screen. */
-  locations?: Array<Record<string, unknown>> | null
+  /** Up to 10 places that surface the pass on the lock screen. `null` clears them. */
+  locations?: TemplateLocation[] | null
   /** ISO 8601 date the pass becomes relevant (lock-screen surfacing). */
   relevantDate?: string | null
 }
@@ -91,8 +96,10 @@ export type TemplateImageSlot = 'icon' | 'logo' | 'strip' | 'thumbnail' | 'backg
 export type VariantImageSlot = 'strip' | 'thumbnail' | 'background'
 
 /** Returned by `templates.uploadImage` (and, with `deleted: true`, `templates.deleteImage`). */
-export type TemplateImage = Omit<Schemas['TemplateImage'], 'slot'> & {
+export type TemplateImage = Omit<Schemas['TemplateImage'], 'slot' | 'variant'> & {
   slot: TemplateImageSlot
+  /** The variant name, or `null` for the slot's base image. */
+  variant: string | null
 }
 
 export interface TemplateImageOptions {

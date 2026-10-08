@@ -9,10 +9,15 @@ const types = Object.keys(spec.webhooks ?? {})
 
 const body = `// Generated from openapi.json by scripts/gen-event-types.mjs. Do not edit.
 
+/**
+ * The Passmint Spec v1 — canonical lifecycle event types delivered to
+ * webhooks and returned by GET /v1/events. Platform detail lives in \`source\`.
+ */
 export const PASSMINT_EVENT_TYPES = [
 ${types.map((t) => `  ${JSON.stringify(t)},`).join('\n')}
 ] as const
 
+/** A canonical lifecycle event type (one of \`PASSMINT_EVENT_TYPES\`). */
 export type PassmintEventType = (typeof PASSMINT_EVENT_TYPES)[number]
 `
 

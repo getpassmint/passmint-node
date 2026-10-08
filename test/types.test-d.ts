@@ -22,6 +22,7 @@ import type {
   TemplateField,
   TemplateImage,
   TemplateImageSlot,
+  TemplateLocation,
   UpdatePassParams,
   VariantImageSlot,
   WalletPlatform,
@@ -180,5 +181,22 @@ describe('Phase 4 surface types', () => {
   it('pass.update_failed carries a delivery_failure payload', () => {
     type Failed = Extract<PassmintEvent, { type: 'pass.update_failed' }>
     expectTypeOf<Failed['data']['object']>().toHaveProperty('delivery_failure')
+  })
+})
+
+describe('TemplateDesign.locations', () => {
+  it('accepts a valid location', () => {
+    expectTypeOf<{
+      latitude: number
+      longitude: number
+      relevantText?: string
+    }>().toExtend<TemplateLocation>()
+    expectTypeOf<TemplateDesign['locations']>().toEqualTypeOf<
+      TemplateLocation[] | null | undefined
+    >()
+  })
+
+  it('rejects a location without latitude', () => {
+    expectTypeOf<{ longitude: number }>().not.toExtend<TemplateLocation>()
   })
 })

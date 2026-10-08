@@ -226,7 +226,7 @@ const { data, has_more } = await passmint.events.list({
 const next = await passmint.events.list({ startingAfter: data.at(-1)!.id })
 ```
 
-Canonical event types: `pass.issued`, `pass.add_intent`, `pass.added_to_wallet`, `pass.update_pushed`, `pass.update_delivered`, `pass.removed`, `pass.voided` (exported as `PASSMINT_EVENT_TYPES`).
+Canonical event types: `pass.issued`, `pass.add_intent`, `pass.added_to_wallet`, `pass.update_pushed`, `pass.update_delivered`, `pass.update_failed`, `pass.removed`, `pass.voided`, `pass.redeemed` (exported as `PASSMINT_EVENT_TYPES`).
 
 ### Pagination
 
@@ -238,7 +238,7 @@ for await (const pass of passmint.passes.listAll({ templateId: 'tmpl_123' })) {
 }
 ```
 
-`listAll` exists on `passes`, `templates`, `webhooks` and `events`. For your own list calls, `autoPaginate((startingAfter) => fetchPage(startingAfter))` is exported too.
+`passes.redemptions` takes `limit` only (no `startingAfter`). `listAll` exists on `passes`, `templates`, `webhooks` and `events`. For your own list calls, `autoPaginate((startingAfter) => fetchPage(startingAfter))` is exported too.
 
 ### Metrics — `passmint.metrics`
 
