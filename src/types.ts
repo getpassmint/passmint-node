@@ -45,6 +45,11 @@ export type TemplateLocation = NonNullable<
   NonNullable<Schemas['CreateTemplateBody']['design']>['locations']
 >[number]
 
+/** Google Wallet loyalty mapping for storeCard templates, derived from the spec's design input. */
+export type TemplateDesignGoogle = NonNullable<
+  NonNullable<Schemas['CreateTemplateBody']['design']>['google']
+>
+
 export interface TemplateDesign {
   description: string
   logoText: string | null
@@ -72,6 +77,12 @@ export interface TemplateDesign {
   locations?: TemplateLocation[] | null
   /** ISO 8601 date the pass becomes relevant (lock-screen surfacing). */
   relevantDate?: string | null
+  /**
+   * Google Wallet only, storeCard only: show template fields as the loyalty card's native
+   * balance (`loyaltyPoints`, `secondaryLoyaltyPoints`) and holder name
+   * (`accountNameFieldKey`). `null` clears it.
+   */
+  google?: TemplateDesignGoogle | null
 }
 
 /**

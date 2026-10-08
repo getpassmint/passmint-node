@@ -58,6 +58,7 @@ export type {
   RequestOptions,
   Template,
   TemplateDesign,
+  TemplateDesignGoogle,
   TemplateField,
   TemplateImage,
   TemplateImageOptions,

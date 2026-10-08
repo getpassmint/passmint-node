@@ -2827,6 +2827,23 @@ export interface components {
                 }[] | null;
                 /** @description ISO 8601 with offset. Apple Wallet surfaces the pass around this time. Apple only. */
                 relevantDate?: string | null;
+                /** @description Google Wallet only, storeCard templates only: show template fields as the loyalty card's native balance and holder name. Apple Wallet is unaffected. */
+                google?: {
+                    loyaltyPoints?: {
+                        /** @description Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text. */
+                        fieldKey: string;
+                        /** @description Shown next to the balance in Google Wallet, e.g. 'Stamps'. */
+                        label: string;
+                    } | null;
+                    secondaryLoyaltyPoints?: {
+                        /** @description Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text. */
+                        fieldKey: string;
+                        /** @description Shown next to the balance in Google Wallet, e.g. 'Stamps'. */
+                        label: string;
+                    } | null;
+                    /** @description Key of a field whose value is the card holder's name in Google Wallet. Omit to keep showing the description there, as cards always have. */
+                    accountNameFieldKey?: string | null;
+                } | null;
             };
             platforms?: ("apple" | "google")[];
             starter_template_id?: string;
@@ -2926,6 +2943,23 @@ export interface components {
                 }[] | null;
                 /** @description ISO 8601 with offset. Apple Wallet surfaces the pass around this time. Apple only. */
                 relevantDate?: string | null;
+                /** @description Google Wallet only, storeCard templates only: show template fields as the loyalty card's native balance and holder name. Apple Wallet is unaffected. */
+                google?: {
+                    loyaltyPoints?: {
+                        /** @description Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text. */
+                        fieldKey: string;
+                        /** @description Shown next to the balance in Google Wallet, e.g. 'Stamps'. */
+                        label: string;
+                    } | null;
+                    secondaryLoyaltyPoints?: {
+                        /** @description Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text. */
+                        fieldKey: string;
+                        /** @description Shown next to the balance in Google Wallet, e.g. 'Stamps'. */
+                        label: string;
+                    } | null;
+                    /** @description Key of a field whose value is the card holder's name in Google Wallet. Omit to keep showing the description there, as cards always have. */
+                    accountNameFieldKey?: string | null;
+                } | null;
             };
             archived?: boolean;
             platforms?: ("apple" | "google")[];
@@ -3493,6 +3527,19 @@ export interface components {
                 [key: string]: unknown;
             }[] | null;
             relevantDate?: string | null;
+            google?: ({
+                loyaltyPoints?: {
+                    fieldKey: string;
+                    label: string;
+                } | null;
+                secondaryLoyaltyPoints?: {
+                    fieldKey: string;
+                    label: string;
+                } | null;
+                accountNameFieldKey?: string | null;
+            } & {
+                [key: string]: unknown;
+            }) | null;
         } & {
             [key: string]: unknown;
         };

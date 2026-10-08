@@ -430,6 +430,72 @@
                 ],
                 "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$",
                 "description": "ISO 8601 with offset. Apple Wallet surfaces the pass around this time. Apple only."
+              },
+              "google": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "loyaltyPoints": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "fieldKey": {
+                        "type": "string",
+                        "maxLength": 48,
+                        "pattern": "^[A-Za-z0-9_]+$",
+                        "description": "Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text."
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "description": "Shown next to the balance in Google Wallet, e.g. 'Stamps'."
+                      }
+                    },
+                    "required": [
+                      "fieldKey",
+                      "label"
+                    ]
+                  },
+                  "secondaryLoyaltyPoints": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "fieldKey": {
+                        "type": "string",
+                        "maxLength": 48,
+                        "pattern": "^[A-Za-z0-9_]+$",
+                        "description": "Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text."
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "description": "Shown next to the balance in Google Wallet, e.g. 'Stamps'."
+                      }
+                    },
+                    "required": [
+                      "fieldKey",
+                      "label"
+                    ]
+                  },
+                  "accountNameFieldKey": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 48,
+                    "pattern": "^[A-Za-z0-9_]+$",
+                    "description": "Key of a field whose value is the card holder's name in Google Wallet. Omit to keep showing the description there, as cards always have."
+                  }
+                },
+                "description": "Google Wallet only, storeCard templates only: show template fields as the loyalty card's native balance and holder name. Apple Wallet is unaffected."
               }
             },
             "required": [
@@ -872,6 +938,72 @@
                 ],
                 "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$",
                 "description": "ISO 8601 with offset. Apple Wallet surfaces the pass around this time. Apple only."
+              },
+              "google": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "loyaltyPoints": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "fieldKey": {
+                        "type": "string",
+                        "maxLength": 48,
+                        "pattern": "^[A-Za-z0-9_]+$",
+                        "description": "Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text."
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "description": "Shown next to the balance in Google Wallet, e.g. 'Stamps'."
+                      }
+                    },
+                    "required": [
+                      "fieldKey",
+                      "label"
+                    ]
+                  },
+                  "secondaryLoyaltyPoints": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "fieldKey": {
+                        "type": "string",
+                        "maxLength": 48,
+                        "pattern": "^[A-Za-z0-9_]+$",
+                        "description": "Key of a field declared in this design. Its value on each pass (or the field's default) is the balance, sent to Google as text."
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "description": "Shown next to the balance in Google Wallet, e.g. 'Stamps'."
+                      }
+                    },
+                    "required": [
+                      "fieldKey",
+                      "label"
+                    ]
+                  },
+                  "accountNameFieldKey": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 48,
+                    "pattern": "^[A-Za-z0-9_]+$",
+                    "description": "Key of a field whose value is the card holder's name in Google Wallet. Omit to keep showing the description there, as cards always have."
+                  }
+                },
+                "description": "Google Wallet only, storeCard templates only: show template fields as the loyalty card's native balance and holder name. Apple Wallet is unaffected."
               }
             },
             "required": [
@@ -3229,6 +3361,57 @@
               "string",
               "null"
             ]
+          },
+          "google": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "loyaltyPoints": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "fieldKey": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fieldKey",
+                  "label"
+                ]
+              },
+              "secondaryLoyaltyPoints": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "fieldKey": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fieldKey",
+                  "label"
+                ]
+              },
+              "accountNameFieldKey": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": {}
           }
         },
         "additionalProperties": {},

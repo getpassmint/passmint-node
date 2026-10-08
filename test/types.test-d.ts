@@ -200,3 +200,21 @@ describe('TemplateDesign.locations', () => {
     expectTypeOf<{ longitude: number }>().not.toExtend<TemplateLocation>()
   })
 })
+
+describe('TemplateDesign.google', () => {
+  it('accepts the Google loyalty mapping', () => {
+    const design: Pick<TemplateDesign, 'google'> = {
+      google: {
+        loyaltyPoints: { fieldKey: 'count', label: 'Stamps' },
+        secondaryLoyaltyPoints: { fieldKey: 'nextReward', label: 'Reward' },
+        accountNameFieldKey: 'customerName',
+      },
+    }
+    expectTypeOf(design.google?.loyaltyPoints?.fieldKey).toEqualTypeOf<string | undefined>()
+    const bad: Pick<TemplateDesign, 'google'> = {
+      // @ts-expect-error label must be a string
+      google: { loyaltyPoints: { fieldKey: 'count', label: 1 } },
+    }
+    void bad
+  })
+})

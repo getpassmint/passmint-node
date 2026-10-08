@@ -155,7 +155,7 @@ const { data: scans } = await passmint.passes.redemptions(pass.id, { limit: 20 }
 for (const scan of scans) console.log(scan.decision, scan.reason, scan.scanned_at)
 ```
 
-Templates take a `redemptionPolicy` (`{ mode: 'single_use' | 'reusable' | 'count', maxUses? }`) and `requireDownloadLink` on `create` and `update`. Template responses include `warnings` when the saved design breaks a recommended rule, and template designs accept `issuerName`, `locations` and `relevantDate`.
+Templates take a `redemptionPolicy` (`{ mode: 'single_use' | 'reusable' | 'count', maxUses? }`) and `requireDownloadLink` on `create` and `update`. Template responses include `warnings` when the saved design breaks a recommended rule, and template designs accept `issuerName`, `locations`, `relevantDate` and `google`. On storeCard templates, `google` maps template fields to the Google Wallet loyalty card: `loyaltyPoints` and `secondaryLoyaltyPoints` (`{ fieldKey, label }`) show a field as the native balance, and `accountNameFieldKey` picks the card holder name field.
 
 #### Per-pass images
 
