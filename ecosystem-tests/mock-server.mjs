@@ -24,8 +24,10 @@ const CANONICAL_EVENT_TYPES = [
   'pass.added_to_wallet',
   'pass.update_pushed',
   'pass.update_delivered',
+  'pass.update_failed',
   'pass.removed',
   'pass.voided',
+  'pass.redeemed',
 ]
 
 function errorBody(type, message, extra = {}) {
