@@ -14,6 +14,7 @@ export const PASSMINT_EVENT_TYPES = [
   "pass.removed",
   "pass.voided",
   "pass.redeemed",
+  "template.republished",
 ] as const
 
 /** A canonical lifecycle event type (one of `PASSMINT_EVENT_TYPES`). */

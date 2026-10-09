@@ -28,6 +28,7 @@ const CANONICAL_EVENT_TYPES = [
   'pass.removed',
   'pass.voided',
   'pass.redeemed',
+  'template.republished',
 ]
 
 function errorBody(type, message, extra = {}) {
