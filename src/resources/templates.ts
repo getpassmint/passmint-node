@@ -11,6 +11,7 @@ import type {
   TemplateImage,
   TemplateImageOptions,
   TemplateImageSlot,
+  TemplateRepublish,
   UpdateTemplateParams,
   VariantImageSlot,
 } from '../types'
@@ -90,6 +91,28 @@ export class TemplatesResource {
       method: 'PATCH',
       path: `/v1/templates/${encodeURIComponent(id)}`,
       body,
+    })
+  }
+
+  /**
+   * Push the template's current design to passes already issued from it, in
+   * this key's mode. Returns a job to poll with `retrieveRepublish` (or watch
+   * for the `template.republished` webhook). A 429 `republish_in_progress`
+   * means too many republishes are running; it can last minutes, so the SDK
+   * throws it immediately instead of retrying.
+   */
+  republish(id: string, options: RequestOptions = {}): Promise<TemplateRepublish> {
+    return this.http.request<TemplateRepublish>({
+      method: 'POST',
+      path: `/v1/templates/${encodeURIComponent(id)}/republish`,
+      idempotencyKey: options.idempotencyKey ?? generateIdempotencyKey(),
+    })
+  }
+
+  retrieveRepublish(id: string, republishId: string): Promise<TemplateRepublish> {
+    return this.http.request<TemplateRepublish>({
+      method: 'GET',
+      path: `/v1/templates/${encodeURIComponent(id)}/republishes/${encodeURIComponent(republishId)}`,
     })
   }
 

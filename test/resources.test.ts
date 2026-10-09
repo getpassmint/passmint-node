@@ -226,6 +226,35 @@ describe('TemplatesResource', () => {
     })
   })
 
+  it('republish POSTs with an idempotency key and returns the republish', async () => {
+    const { http, calls } = fakeHttp({ object: 'template_republish', id: 'tmplRepub_1' })
+    const templates = new TemplatesResource(http)
+
+    const out = await templates.republish('tmpl_1')
+
+    expect(out.id).toBe('tmplRepub_1')
+    expect(calls[0]).toMatchObject({ method: 'POST', path: '/v1/templates/tmpl_1/republish' })
+    expect(calls[0]?.body).toBeUndefined()
+    expect(calls[0]?.idempotencyKey).toBeTruthy()
+  })
+
+  it('republish honours a caller-supplied idempotency key', async () => {
+    const { http, calls } = fakeHttp()
+    await new TemplatesResource(http).republish('tmpl_1', { idempotencyKey: 'key_1' })
+    expect(calls[0]?.idempotencyKey).toBe('key_1')
+  })
+
+  it('retrieveRepublish GETs the republish', async () => {
+    const { http, calls } = fakeHttp({ object: 'template_republish', id: 'tmplRepub_1' })
+
+    await new TemplatesResource(http).retrieveRepublish('tmpl_1', 'tmplRepub_1')
+
+    expect(calls[0]).toMatchObject({
+      method: 'GET',
+      path: '/v1/templates/tmpl_1/republishes/tmplRepub_1',
+    })
+  })
+
   it('retrieve, list, update, archive hit the right paths and methods', async () => {
     const { http, calls } = fakeHttp()
     const templates = new TemplatesResource(http)

@@ -64,6 +64,8 @@ export type {
   TemplateImageOptions,
   TemplateImageSlot,
   TemplateLocation,
+  TemplateRepublish,
+  TemplateRepublishedEvent,
   TemplateType,
   UpdatePassParams,
   UpdateTemplateParams,
