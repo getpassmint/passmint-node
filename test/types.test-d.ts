@@ -14,6 +14,7 @@ import type {
   PassImages,
   PassPlatformStatus,
   PassmintEvent,
+  PassmintEventType,
   PlatformDeliveryStatus,
   Redemption,
   RedemptionPolicy,
@@ -23,6 +24,8 @@ import type {
   TemplateImage,
   TemplateImageSlot,
   TemplateLocation,
+  TemplateRepublish,
+  TemplateRepublishedEvent,
   UpdatePassParams,
   VariantImageSlot,
   WalletPlatform,
@@ -216,5 +219,38 @@ describe('TemplateDesign.google', () => {
       google: { loyaltyPoints: { fieldKey: 'count', label: 1 } },
     }
     void bad
+  })
+})
+
+describe('template republish types', () => {
+  it('types the republish job and the retrying flag', () => {
+    expectTypeOf<TemplateRepublish['apple']>().toEqualTypeOf<{
+      total: number
+      done: number
+      failed: number
+    }>()
+    expectTypeOf<NonNullable<PassDelivery['apple']>['retrying']>().toEqualTypeOf<
+      boolean | undefined
+    >()
+    expectTypeOf<NonNullable<PassDelivery['google']>['retrying']>().toEqualTypeOf<
+      boolean | undefined
+    >()
+    expectTypeOf<'template.republished'>().toExtend<PassmintEventType>()
+  })
+
+  it('gives the template event its own shape', () => {
+    expectTypeOf<TemplateRepublishedEvent['type']>().toEqualTypeOf<'template.republished'>()
+    expectTypeOf<
+      TemplateRepublishedEvent['data']['object']['template_republish']
+    >().toEqualTypeOf<TemplateRepublish>()
+  })
+
+  it('resource methods return TemplateRepublish', () => {
+    expectTypeOf<
+      TemplatesResource['republish']
+    >().returns.resolves.toEqualTypeOf<TemplateRepublish>()
+    expectTypeOf<
+      TemplatesResource['retrieveRepublish']
+    >().returns.resolves.toEqualTypeOf<TemplateRepublish>()
   })
 })

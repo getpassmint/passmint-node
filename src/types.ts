@@ -405,6 +405,16 @@ export type Account = Omit<Schemas['Account'], 'organization_slug'> & {
   organization_slug: string
 }
 
+/** A template republish job: progress of pushing a template's design to issued passes. */
+export type TemplateRepublish = Schemas['TemplateRepublish']
+
+/**
+ * The `template.republished` event. It carries `data.object.template_republish`
+ * and no `pass`. `PassmintEvent` keeps describing pass events; narrow with
+ * `event.type === 'template.republished'` and use this type.
+ */
+export type TemplateRepublishedEvent = Schemas['TemplateRepublishedEvent']
+
 /** Delivery counts for a pass update, per wallet. */
 export type PassDelivery = Schemas['PassDelivery']
 
