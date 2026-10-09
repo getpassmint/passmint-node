@@ -7,6 +7,7 @@ import {
   PassmintError,
   PassmintRateLimitError,
 } from '../src/errors'
+import { Passmint } from '../src/index'
 import { VERSION } from '../src/version'
 
 type FetchCall = { url: string; init: RequestInit }
@@ -217,6 +218,23 @@ describe('PassmintHttpClient.request', () => {
     expect(err).toBeInstanceOf(PassmintRateLimitError)
     expect((err as PassmintRateLimitError).status).toBe(429)
     expect((err as PassmintRateLimitError).retryAfterSeconds).toBe(4)
+  })
+
+  it('does not retry republish_in_progress 429s even with retries enabled', async () => {
+    const { impl } = makeFetch([
+      {
+        status: 429,
+        body: { error: { type: 'rate_limited', code: 'republish_in_progress', message: 'busy' } },
+        headers: { 'retry-after': '60' },
+      },
+    ])
+    const client = new Passmint({ apiKey: 'pmk_test_1', fetch: impl, maxRetries: 3 })
+    const p = client.templates.republish('tmpl_1').catch((e) => e)
+    await flush()
+    const err = await p
+    expect(err).toBeInstanceOf(PassmintRateLimitError)
+    expect((err as PassmintRateLimitError).retryAfterSeconds).toBe(60)
+    expect(impl).toHaveBeenCalledTimes(1)
   })
 
   it('retries 5xx up to maxRetries, then throws PassmintAPIError', async () => {

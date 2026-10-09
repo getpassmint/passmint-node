@@ -1058,7 +1058,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Required, non-empty. Event types to deliver, or `*` for all.",
+            "description": "Required, non-empty. Event types to deliver, or `*` for all pass events (template.republished must be subscribed by name).",
             "example": [
               "pass.redeemed"
             ]
@@ -1090,7 +1090,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Event types to deliver (for example `pass.redeemed`), or `*` for all of them.",
+            "description": "Event types to deliver (for example `pass.redeemed`), or `*` for all pass events (template.republished must be subscribed by name).",
             "example": [
               "pass.redeemed"
             ]
@@ -2250,6 +2250,226 @@
         ],
         "description": "`data.object.redemption`, present on `pass.redeemed`."
       },
+      "TemplateRepublishedEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string",
+            "enum": [
+              "event"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "template.republished"
+            ]
+          },
+          "api_version": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "livemode": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "object": {
+                "type": "object",
+                "properties": {
+                  "template_republish": {
+                    "$ref": "#/components/schemas/TemplateRepublish"
+                  }
+                },
+                "required": [
+                  "template_republish"
+                ]
+              }
+            },
+            "required": [
+              "object"
+            ]
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "platform": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "apple",
+                  "google",
+                  null
+                ]
+              },
+              "unit": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "device",
+                  "object",
+                  null
+                ]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "best_effort",
+                  "unconfirmed"
+                ]
+              }
+            },
+            "required": [
+              "platform",
+              "unit",
+              "confidence"
+            ]
+          },
+          "previous_attributes": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "type",
+          "api_version",
+          "created_at",
+          "idempotency_key",
+          "livemode",
+          "data",
+          "source",
+          "previous_attributes"
+        ]
+      },
+      "TemplateRepublish": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "template_republish"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "template_id": {
+            "type": "string"
+          },
+          "livemode": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed"
+            ]
+          },
+          "google": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "synced",
+                  "failed",
+                  "skipped"
+                ],
+                "description": "The Google Wallet class sync: one write that carries the issuer name, colour, logo and hero to every Google holder. `skipped`: no pass on this template has a Google object."
+              },
+              "error": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "objects": {
+                "type": "object",
+                "properties": {
+                  "total": {
+                    "type": "integer"
+                  },
+                  "done": {
+                    "type": "integer"
+                  },
+                  "failed": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "total",
+                  "done",
+                  "failed"
+                ],
+                "description": "Per-pass Google object updates. Zero when the change only touched the class (name, logo, hero)."
+              }
+            },
+            "required": [
+              "status",
+              "error",
+              "objects"
+            ]
+          },
+          "apple": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "done": {
+                "type": "integer"
+              },
+              "failed": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "done",
+              "failed"
+            ],
+            "description": "Apple passes re-signed and pushed: those with an installed device, plus never-installed ones when the artwork changed."
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "template_id",
+          "livemode",
+          "status",
+          "google",
+          "apple",
+          "created_at",
+          "completed_at"
+        ]
+      },
       "ScannerPairing": {
         "type": "object",
         "properties": {
@@ -2320,7 +2540,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is negative, fractional or non-numeric; 0 is valid and a limit over the maximum is clamped), `invalid_cursor` (400, `starting_after` is not an id on this list) and `plan_limit_exceeded` (402).",
+                "description": "A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is negative, fractional or non-numeric; 0 is valid and a limit over the maximum is clamped), `invalid_cursor` (400, `starting_after` is not an id on this list), `republish_in_progress` (429, too many template republishes running), `republish_unavailable` (503, try again shortly) and `plan_limit_exceeded` (402).",
                 "examples": [
                   "api_key_expired",
                   "insufficient_scope",
@@ -2604,7 +2824,8 @@
               "pass.update_failed",
               "pass.removed",
               "pass.voided",
-              "pass.redeemed"
+              "pass.redeemed",
+              "template.republished"
             ]
           },
           "api_version": {
@@ -4374,6 +4595,10 @@
               },
               "unregistered": {
                 "type": "integer"
+              },
+              "retrying": {
+                "type": "boolean",
+                "description": "Present and true when some pushes failed for a reason that may clear (Apple busy or unreachable) and Passmint queued an automatic retry. Absent otherwise."
               }
             },
             "required": [
@@ -4401,6 +4626,10 @@
               },
               "error": {
                 "type": "string"
+              },
+              "retrying": {
+                "type": "boolean",
+                "description": "Present and true when the Google update failed for a reason that may clear (a Google 5xx, 409 or 429, or a network error) and Passmint queued an automatic retry."
               }
             },
             "required": [
@@ -6047,6 +6276,215 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (API key scope, plan or account)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/templates/{id}/republish": {
+      "post": {
+        "tags": [
+          "Templates"
+        ],
+        "summary": "Push template changes to issued passes",
+        "description": "Publishes the template's current design to the passes already issued from it, in this key's mode. Google Wallet gets one class update (issuer name, logo, hero) plus per-pass object updates when fields, colours or the barcode changed; Apple Wallet passes with an installed device are re-signed and pushed. Saving a template never does this on its own — call it once your edits are done. Returns 202 with the new republish, or 200 with the one already running; in that case another runs when it finishes, so the latest design reaches every pass. Archived templates can be republished too: their passes are still in wallets.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A republish of this template was already running; it is returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateRepublish"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The republish was queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateRepublish"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Plan limit reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (API key scope, plan or account)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/templates/{id}/republishes/{rid}": {
+      "get": {
+        "tags": [
+          "Templates"
+        ],
+        "summary": "Retrieve a template republish",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "rid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The republish, with live counts while it runs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateRepublish"
                 }
               }
             }
@@ -8053,6 +8491,30 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PassRedeemedEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Return any 2xx to acknowledge"
+          }
+        }
+      }
+    },
+    "template.republished": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "template.republished event",
+        "description": "Sent to your webhook endpoint when a `template.republished` event occurs. Verify the signature, then return any 2xx to acknowledge.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateRepublishedEvent"
               }
             }
           }

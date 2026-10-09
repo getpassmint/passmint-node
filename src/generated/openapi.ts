@@ -913,6 +913,203 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/templates/{id}/republish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Push template changes to issued passes
+         * @description Publishes the template's current design to the passes already issued from it, in this key's mode. Google Wallet gets one class update (issuer name, logo, hero) plus per-pass object updates when fields, colours or the barcode changed; Apple Wallet passes with an installed device are re-signed and pushed. Saving a template never does this on its own — call it once your edits are done. Returns 202 with the new republish, or 200 with the one already running; in that case another runs when it finishes, so the latest design reaches every pass. Archived templates can be republished too: their passes are still in wallets.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A republish of this template was already running; it is returned */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateRepublish"];
+                    };
+                };
+                /** @description The republish was queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateRepublish"];
+                    };
+                };
+                /** @description Authentication failed */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Plan limit reached */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Forbidden (API key scope, plan or account) */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Idempotency conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Rate limited */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Temporarily unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/templates/{id}/republishes/{rid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a template republish */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    rid: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The republish, with live counts while it runs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateRepublish"];
+                    };
+                };
+                /** @description Authentication failed */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Forbidden (API key scope, plan or account) */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks": {
         parameters: {
             query?: never;
@@ -2733,6 +2930,47 @@ export interface webhooks {
         patch?: never;
         trace?: never;
     };
+    "template.republished": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * template.republished event
+         * @description Sent to your webhook endpoint when a `template.republished` event occurs. Verify the signature, then return any 2xx to acknowledge.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TemplateRepublishedEvent"];
+                };
+            };
+            responses: {
+                /** @description Return any 2xx to acknowledge */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export interface components {
     schemas: {
@@ -2975,7 +3213,7 @@ export interface components {
              */
             url: string;
             /**
-             * @description Required, non-empty. Event types to deliver, or `*` for all.
+             * @description Required, non-empty. Event types to deliver, or `*` for all pass events (template.republished must be subscribed by name).
              * @example [
              *       "pass.redeemed"
              *     ]
@@ -2988,7 +3226,7 @@ export interface components {
         UpdateWebhookBody: {
             url?: string;
             /**
-             * @description Event types to deliver (for example `pass.redeemed`), or `*` for all of them.
+             * @description Event types to deliver (for example `pass.redeemed`), or `*` for all pass events (template.republished must be subscribed by name).
              * @example [
              *       "pass.redeemed"
              *     ]
@@ -3267,6 +3505,62 @@ export interface components {
             scans_used: number | null;
             policy_mode: string | null;
         };
+        TemplateRepublishedEvent: {
+            id: string;
+            /** @enum {string} */
+            object: "event";
+            /** @enum {string} */
+            type: "template.republished";
+            api_version: string;
+            created_at: string;
+            idempotency_key: string;
+            livemode: boolean;
+            data: {
+                object: {
+                    template_republish: components["schemas"]["TemplateRepublish"];
+                };
+            };
+            source: {
+                /** @enum {string|null} */
+                platform: "apple" | "google" | null;
+                /** @enum {string|null} */
+                unit: "device" | "object" | null;
+                /** @enum {string} */
+                confidence: "exact" | "best_effort" | "unconfirmed";
+            };
+            previous_attributes: null;
+        };
+        TemplateRepublish: {
+            /** @enum {string} */
+            object: "template_republish";
+            id: string;
+            template_id: string;
+            livemode: boolean;
+            /** @enum {string} */
+            status: "queued" | "running" | "completed";
+            google: {
+                /**
+                 * @description The Google Wallet class sync: one write that carries the issuer name, colour, logo and hero to every Google holder. `skipped`: no pass on this template has a Google object.
+                 * @enum {string}
+                 */
+                status: "pending" | "synced" | "failed" | "skipped";
+                error: string | null;
+                /** @description Per-pass Google object updates. Zero when the change only touched the class (name, logo, hero). */
+                objects: {
+                    total: number;
+                    done: number;
+                    failed: number;
+                };
+            };
+            /** @description Apple passes re-signed and pushed: those with an installed device, plus never-installed ones when the artwork changed. */
+            apple: {
+                total: number;
+                done: number;
+                failed: number;
+            };
+            created_at: string;
+            completed_at: string | null;
+        };
         ScannerPairing: {
             /** @enum {string} */
             object: "scanner_pairing";
@@ -3284,7 +3578,7 @@ export interface components {
                 /** @enum {string} */
                 type: "authentication_error" | "authorization_error" | "invalid_request_error" | "not_found_error" | "rate_limit_error" | "idempotency_error" | "api_error" | "billing_error";
                 /**
-                 * @description A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is negative, fractional or non-numeric; 0 is valid and a limit over the maximum is clamped), `invalid_cursor` (400, `starting_after` is not an id on this list) and `plan_limit_exceeded` (402).
+                 * @description A stable, machine-readable code when the error has a specific cause. Not exhaustive: treat unknown codes as the generic error for the `type`. Codes include `api_key_expired` (401, the key's expiry has passed), `insufficient_scope` (403, the key's scopes do not allow this route), `invalid_limit` (400, `limit` is negative, fractional or non-numeric; 0 is valid and a limit over the maximum is clamped), `invalid_cursor` (400, `starting_after` is not an id on this list), `republish_in_progress` (429, too many template republishes running), `republish_unavailable` (503, try again shortly) and `plan_limit_exceeded` (402).
                  * @example api_key_expired
                  * @example insufficient_scope
                  * @example invalid_limit
@@ -3354,7 +3648,7 @@ export interface components {
             /** @enum {string} */
             object: "event";
             /** @enum {string} */
-            type: "pass.issued" | "pass.add_intent" | "pass.added_to_wallet" | "pass.update_pushed" | "pass.update_delivered" | "pass.update_failed" | "pass.removed" | "pass.voided" | "pass.redeemed";
+            type: "pass.issued" | "pass.add_intent" | "pass.added_to_wallet" | "pass.update_pushed" | "pass.update_delivered" | "pass.update_failed" | "pass.removed" | "pass.voided" | "pass.redeemed" | "template.republished";
             api_version: string;
             created_at: string;
             idempotency_key: string;
@@ -3812,12 +4106,16 @@ export interface components {
                 pushed: number;
                 failed: number;
                 unregistered: number;
+                /** @description Present and true when some pushes failed for a reason that may clear (Apple busy or unreachable) and Passmint queued an automatic retry. Absent otherwise. */
+                retrying?: boolean;
             } | null;
             /** @description Null when the pass has no Google Wallet object. `not_saved`: no holder has saved it yet. `skipped`: Google delivery was skipped at issue. */
             google: {
                 /** @enum {string} */
                 status: "updated" | "not_saved" | "failed" | "skipped";
                 error?: string;
+                /** @description Present and true when the Google update failed for a reason that may clear (a Google 5xx, 409 or 429, or a network error) and Passmint queued an automatic retry. */
+                retrying?: boolean;
             } | null;
         };
         PassVoidResponse: {

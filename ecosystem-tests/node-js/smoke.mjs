@@ -34,6 +34,7 @@ assert.deepEqual([...PASSMINT_EVENT_TYPES], [
   'pass.removed',
   'pass.voided',
   'pass.redeemed',
+  'template.republished',
 ])
 assert.equal(detectMode(apiKey), 'test')
 

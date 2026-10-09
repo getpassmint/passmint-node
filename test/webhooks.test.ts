@@ -134,6 +134,7 @@ describe('PASSMINT_EVENT_TYPES', () => {
       'pass.removed',
       'pass.voided',
       'pass.redeemed',
+      'template.republished',
     ])
     expectTypeOf<PassmintEventType>().toEqualTypeOf<(typeof PASSMINT_EVENT_TYPES)[number]>()
   })
